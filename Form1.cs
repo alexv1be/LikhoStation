@@ -23,7 +23,7 @@ namespace LikhoStation
 
             this.DoubleBuffered = true;
             this.ClientSize = new Size(1000, 600);
-            this.Text = "Станция Лихо: Изнанка";
+            this.Text = "Станция Лихо";
 
             gameTimer.Interval = 20;
             gameTimer.Tick += UpdateGame;

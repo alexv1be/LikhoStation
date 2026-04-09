@@ -10,31 +10,30 @@ namespace LikhoStation
 
         public void Draw(Graphics g, GameController engine, int screenWidth, int screenHeight)
         {
-            // Если в главном меню - рисуем только его
             if (engine.State == GameState.MainMenu)
             {
                 DrawMainMenu(g, engine, screenWidth, screenHeight);
                 return;
             }
 
-            // ОТРИСОВКА ИГРЫ
             blinkCounter++;
             Level level = engine.CurrentLevel;
             Player p = engine.Player;
 
-            // Фон
             if (p.IsFocusMode) g.Clear(Color.FromArgb(5, 5, 10));
             else if (level.Name == "Kitchen") g.Clear(Color.FromArgb(50, 40, 40));
-            else g.Clear(Color.FromArgb(20, 25, 35));
+            else if (level.Name == "Street") g.Clear(Color.FromArgb(20, 25, 35));
+            else if (level.Name == "SubwayDescent") g.Clear(Color.FromArgb(30, 30, 35)); // Под землей темнее
 
-            // Сдвиг камеры
-            g.TranslateTransform(-engine.CameraOffsetX, 0);
+            // Сдвигаем камеру теперь по двум осям (X и Y)
+            g.TranslateTransform(-engine.CameraOffsetX, -engine.CameraOffsetY);
 
             // Отрисовка геометрии уровня
             foreach (var plat in level.Platforms)
             {
                 if (p.IsFocusMode) g.DrawRectangle(new Pen(Color.FromArgb(50, 255, 255, 255), 2), plat.X, plat.Y, plat.Width, plat.Height);
                 else if (level.Name == "Kitchen") g.FillRectangle(new SolidBrush(Color.FromArgb(100, 80, 80)), plat);
+                else if (level.Name == "SubwayDescent") g.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 45)), plat); // Цвет эскалатора
                 else g.FillRectangle(Brushes.Gray, plat);
             }
 
@@ -44,6 +43,7 @@ namespace LikhoStation
                 if (p.IsFocusMode) g.DrawRectangle(new Pen(Color.Yellow, 4), level.ItemBag.X, level.ItemBag.Y, level.ItemBag.Width, level.ItemBag.Height);
             }
 
+            // Отрисовка Яны
             Brush playerBrush = Brushes.DarkRed;
             if (!level.IsRealWorld)
             {
@@ -52,13 +52,19 @@ namespace LikhoStation
             }
             g.FillRectangle(playerBrush, p.Pos.X, p.Pos.Y, p.Size.Width, p.Size.Height);
 
+            // Отрисовка объектов ПЕРЕДНЕГО ПЛАНА
+            if (level.HasForegroundObject)
+            {
+                g.FillRectangle(new SolidBrush(Color.FromArgb(15, 15, 20)), level.ForegroundObject);
+                g.DrawString("МЕТРО", new Font("Arial", 24, FontStyle.Bold), Brushes.DarkRed, level.ForegroundObject.X + 30, level.ForegroundObject.Y + 150);
+            }
+
             g.ResetTransform();
 
-            if (level.HasKhmar) DrawKhmar(g, p, engine.CameraOffsetX, screenWidth, screenHeight);
+            // Передаем CameraOffsetY для корректной отрисовки Хмари и UI
+            if (level.HasKhmar) DrawKhmar(g, p, engine.CameraOffsetX, engine.CameraOffsetY, screenWidth, screenHeight);
+            DrawUI(g, level, p, engine.CameraOffsetX, engine.CameraOffsetY);
 
-            DrawUI(g, level, p, engine.CameraOffsetX);
-
-            // ОТРИСОВКА ПАУЗЫ (ПОВЕРХ ИГРЫ)
             if (engine.State == GameState.Paused)
             {
                 DrawPauseMenu(g, engine, screenWidth, screenHeight);
@@ -86,7 +92,6 @@ namespace LikhoStation
 
         private void DrawPauseMenu(Graphics g, GameController engine, int w, int h)
         {
-            // Полупрозрачный черный фон для паузы
             g.FillRectangle(new SolidBrush(Color.FromArgb(150, 0, 0, 0)), 0, 0, w, h);
             g.DrawString("ПАУЗА", new Font("Georgia", 40, FontStyle.Bold), Brushes.White, w / 2 - 100, h / 4);
 
@@ -100,14 +105,18 @@ namespace LikhoStation
             }
         }
 
-        private void DrawKhmar(Graphics g, Player p, float camX, int width, int height)
+        private void DrawKhmar(Graphics g, Player p, float camX, float camY, int width, int height)
         {
             using (GraphicsPath wallPath = new GraphicsPath())
             {
                 wallPath.AddRectangle(new Rectangle(0, 0, width, height));
+
+                // Корректировка позиций Хмари с учетом CameraOffsetY
                 float screenPlayerX = p.Pos.X - camX;
+                float screenPlayerY = p.Pos.Y - camY;
+
                 float centerX = screenPlayerX + p.Size.Width / 2;
-                float centerY = p.Pos.Y + p.Size.Height / 3;
+                float centerY = screenPlayerY + p.Size.Height / 3;
 
                 wallPath.AddEllipse(centerX - visibilityRadius, centerY - visibilityRadius, visibilityRadius * 2, visibilityRadius * 2);
 
@@ -118,7 +127,7 @@ namespace LikhoStation
             }
         }
 
-        private void DrawUI(Graphics g, Level level, Player p, float camX)
+        private void DrawUI(Graphics g, Level level, Player p, float camX, float camY)
         {
             if (level.Name == "Kitchen")
             {
@@ -126,12 +135,17 @@ namespace LikhoStation
                 if (!level.IsBagPickedUp && level.IsNearBag)
                 {
                     float bagScreenX = level.ItemBag.X - camX;
-                    g.DrawString("Взять (E)", new Font("Arial", 16, FontStyle.Bold), Brushes.Yellow, bagScreenX - 10, level.ItemBag.Y - 30);
+                    float bagScreenY = level.ItemBag.Y - camY; // UI тоже должен учитывать камеру
+                    g.DrawString("Взять (E)", new Font("Arial", 16, FontStyle.Bold), Brushes.Yellow, bagScreenX - 10, bagScreenY - 30);
                 }
             }
             else if (level.Name == "Street")
             {
                 g.DrawString("УЛИЦА (Путь к метро)", new Font("Arial", 20), Brushes.LightSteelBlue, 40, 40);
+            }
+            else if (level.Name == "SubwayDescent")
+            {
+                g.DrawString("СПУСК В МЕТРО", new Font("Arial", 20), Brushes.DarkGray, 40, 40);
             }
 
             if (!level.IsRealWorld)

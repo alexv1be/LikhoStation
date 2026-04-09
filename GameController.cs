@@ -11,6 +11,7 @@ namespace LikhoStation
         public Player Player { get; private set; }
         public Level CurrentLevel { get; private set; }
         public float CameraOffsetX { get; private set; }
+        public float CameraOffsetY { get; private set; } // Новая ось камеры
 
         // МЕНЮ И СОСТОЯНИЯ
         public GameState State { get; private set; } = GameState.MainMenu;
@@ -31,58 +32,64 @@ namespace LikhoStation
             HasSaveFile = File.Exists(saveFilePath);
         }
 
-        // ЛОГИКА ОДИНОЧНЫХ НАЖАТИЙ (ДЛЯ МЕНЮ И ПАУЗЫ)
+        // --- ЛОГИКА ОДИНОЧНЫХ НАЖАТИЙ (ДЛЯ МЕНЮ И ПАУЗЫ) ---
         public void OnSingleKeyPress(Keys key)
         {
-            if (State == GameState.MainMenu)
+            if (State == GameState.MainMenu) HandleMainMenuInput(key);
+            else if (State == GameState.Playing) HandlePlayingInput(key);
+            else if (State == GameState.Paused) HandlePausedInput(key);
+        }
+
+        private void HandleMainMenuInput(Keys key)
+        {
+            if (key == Keys.Up || key == Keys.W) MenuIndex--;
+            if (key == Keys.Down || key == Keys.S) MenuIndex++;
+
+            int maxIndex = HasSaveFile ? 2 : 1;
+            if (MenuIndex < 0) MenuIndex = maxIndex;
+            if (MenuIndex > maxIndex) MenuIndex = 0;
+
+            if (key == Keys.Enter)
             {
-                if (key == Keys.Up || key == Keys.W) MenuIndex--;
-                if (key == Keys.Down || key == Keys.S) MenuIndex++;
-
-                int maxIndex = HasSaveFile ? 2 : 1;
-                if (MenuIndex < 0) MenuIndex = maxIndex;
-                if (MenuIndex > maxIndex) MenuIndex = 0;
-
-                if (key == Keys.Enter)
-                {
-                    if (MenuIndex == 0) StartNewGame();
-                    else if (MenuIndex == 1 && HasSaveFile) LoadGame();
-                    else if (MenuIndex == 1 && !HasSaveFile) ShouldExit = true; // Если нет сейва, 1 - это Выход
-                    else if (MenuIndex == 2) ShouldExit = true;
-                }
-            }
-            else if (State == GameState.Playing)
-            {
-                if (key == Keys.Escape)
-                {
-                    State = GameState.Paused;
-                    MenuIndex = 0; // Сбрасываем курсор на "Продолжить"
-                }
-            }
-            else if (State == GameState.Paused)
-            {
-                if (key == Keys.Up || key == Keys.W) MenuIndex--;
-                if (key == Keys.Down || key == Keys.S) MenuIndex++;
-
-                if (MenuIndex < 0) MenuIndex = 2;
-                if (MenuIndex > 2) MenuIndex = 0;
-
-                if (key == Keys.Enter)
-                {
-                    if (MenuIndex == 0) State = GameState.Playing; // Продолжить
-                    else if (MenuIndex == 1) // Сохранить и выйти в меню
-                    {
-                        SaveGame();
-                        State = GameState.MainMenu;
-                        MenuIndex = 0;
-                    }
-                    else if (MenuIndex == 2) ShouldExit = true; // Выйти из игры
-                }
-                else if (key == Keys.Escape) State = GameState.Playing; // Снять с паузы
+                if (MenuIndex == 0) StartNewGame();
+                else if (MenuIndex == 1 && HasSaveFile) LoadGame();
+                else if (MenuIndex == 1 && !HasSaveFile) ShouldExit = true;
+                else if (MenuIndex == 2) ShouldExit = true;
             }
         }
 
-        // --- СОХРАНЕНИЕ И ЗАГРУЗКА ---
+        private void HandlePlayingInput(Keys key)
+        {
+            if (key == Keys.Escape)
+            {
+                State = GameState.Paused;
+                MenuIndex = 0;
+            }
+        }
+
+        private void HandlePausedInput(Keys key)
+        {
+            if (key == Keys.Up || key == Keys.W) MenuIndex--;
+            if (key == Keys.Down || key == Keys.S) MenuIndex++;
+
+            if (MenuIndex < 0) MenuIndex = 2;
+            if (MenuIndex > 2) MenuIndex = 0;
+
+            if (key == Keys.Enter)
+            {
+                if (MenuIndex == 0) State = GameState.Playing;
+                else if (MenuIndex == 1)
+                {
+                    SaveGame();
+                    State = GameState.MainMenu;
+                    MenuIndex = 0;
+                }
+                else if (MenuIndex == 2) ShouldExit = true;
+            }
+            else if (key == Keys.Escape) State = GameState.Playing;
+        }
+
+        // СОХРАНЕНИЕ И ЗАГРУЗКА
         private void SaveGame()
         {
             string data = $"{CurrentLevel.Name},{CurrentLevel.IsBagPickedUp}";
@@ -95,7 +102,7 @@ namespace LikhoStation
             if (File.Exists(saveFilePath))
             {
                 string[] data = File.ReadAllText(saveFilePath).Split(',');
-                // Проверяем, что в массиве есть хотя бы 2 элемента, чтобы избежать вылета
+
                 if (data.Length >= 2)
                 {
                     string savedScene = data[0];
@@ -122,41 +129,91 @@ namespace LikhoStation
             Player.Oxygen = Player.MaxOxygen;
             Player.IsExhausted = false;
 
-            if (sceneName == "Kitchen")
+            if (sceneName == "Kitchen") LoadKitchen();
+            else if (sceneName == "Street") LoadStreet();
+            else if (sceneName == "SubwayDescent") LoadSubwayDescent();
+        }
+
+        private void LoadKitchen()
+        {
+            CurrentLevel.IsRealWorld = true;
+            CurrentLevel.HasKhmar = false;
+            CurrentLevel.IsStaticCamera = true;
+            CurrentLevel.WorldWidth = screenWidth;
+
+            Player.Size = new Size(100, 200);
+            Player.Pos = new PointF(150, CurrentLevel.GroundY - Player.Size.Height);
+
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, CurrentLevel.WorldWidth, screenHeight - CurrentLevel.GroundY));
+            CurrentLevel.ItemBag = new RectangleF(700, CurrentLevel.GroundY - 60, 60, 60);
+        }
+
+        private void LoadStreet()
+        {
+            CurrentLevel.IsRealWorld = true;
+            CurrentLevel.HasKhmar = false;
+            CurrentLevel.IsStaticCamera = false;
+            CurrentLevel.WorldWidth = 3500;
+
+            Player.Size = new Size(80, 160); // Увеличили масштаб на улице
+            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
+
+            // Сделали ямы меньше
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 1000, screenHeight));
+            CurrentLevel.Platforms.Add(new RectangleF(1150, CurrentLevel.GroundY, 800, screenHeight));
+            CurrentLevel.Platforms.Add(new RectangleF(2100, CurrentLevel.GroundY, 1400, screenHeight));
+
+            CurrentLevel.Platforms.Add(new RectangleF(600, CurrentLevel.GroundY - 100, 120, 100));
+            CurrentLevel.Platforms.Add(new RectangleF(1500, CurrentLevel.GroundY - 160, 150, 160));
+
+            // Здание Метро в конце улицы (рисуется ПОВЕРХ Яны)
+            float subwayHeight = 500f;
+            CurrentLevel.ForegroundObject = new RectangleF(3200, CurrentLevel.GroundY - subwayHeight, 300, subwayHeight);
+            CurrentLevel.HasForegroundObject = true;
+        }
+
+        private void LoadSubwayDescent()
+        {
+            CurrentLevel.IsRealWorld = true;
+            CurrentLevel.HasKhmar = false;
+            CurrentLevel.IsStaticCamera = false;
+            CurrentLevel.FollowY = true; // Включаем вертикальную камеру
+            CurrentLevel.WorldWidth = 4000;
+
+            Player.Size = new Size(80, 160);
+
+            // Начинаем спуск почти под потолком экрана
+            float startY = screenHeight * 0.2f;
+            Player.Pos = new PointF(100, startY - Player.Size.Height);
+
+            // Входная площадка
+            CurrentLevel.Platforms.Add(new RectangleF(0, startY, 400, screenHeight * 3));
+
+            // Генерация Эскалатора (40 ступенек в цикле)
+            int steps = 40;
+            float stepW = 60;
+            float stepH = 35;
+
+            for (int i = 0; i < steps; i++)
             {
-                CurrentLevel.IsRealWorld = true;
-                CurrentLevel.HasKhmar = false;
-                CurrentLevel.IsStaticCamera = true;
-                CurrentLevel.WorldWidth = screenWidth;
-
-                Player.Size = new Size(100, 200);
-                Player.Pos = new PointF(150, CurrentLevel.GroundY - Player.Size.Height);
-
-                CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, CurrentLevel.WorldWidth, screenHeight - CurrentLevel.GroundY));
-                CurrentLevel.ItemBag = new RectangleF(700, CurrentLevel.GroundY - 60, 60, 60);
+                CurrentLevel.Platforms.Add(new RectangleF(400 + (i * stepW), startY + (i * stepH), stepW, screenHeight * 3));
             }
-            else if (sceneName == "Street")
-            {
-                CurrentLevel.IsRealWorld = true;
-                CurrentLevel.HasKhmar = false;
-                CurrentLevel.IsStaticCamera = false;
-                CurrentLevel.WorldWidth = 3500;
 
-                Player.Size = new Size(60, 120);
-                Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
+            // Платформа станции в самом низу
+            float bottomY = startY + (steps * stepH);
+            CurrentLevel.GroundY = bottomY; // Задаем дно уровня
 
-                CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 800, screenHeight - CurrentLevel.GroundY));
-                CurrentLevel.Platforms.Add(new RectangleF(1100, CurrentLevel.GroundY, 600, screenHeight - CurrentLevel.GroundY));
-                CurrentLevel.Platforms.Add(new RectangleF(2000, CurrentLevel.GroundY, 1500, screenHeight - CurrentLevel.GroundY));
-                CurrentLevel.Platforms.Add(new RectangleF(500, CurrentLevel.GroundY - 80, 100, 80));
-                CurrentLevel.Platforms.Add(new RectangleF(1400, CurrentLevel.GroundY - 140, 120, 140));
-            }
+            CurrentLevel.Platforms.Add(new RectangleF(400 + (steps * stepW), bottomY, 2000, screenHeight * 3));
+
+            // Настройка лимита камеры: горизонт внизу будет на 85% экрана
+            CurrentLevel.MaxCameraOffsetY = bottomY - screenHeight * 0.85f;
+            if (CurrentLevel.MaxCameraOffsetY < 0) CurrentLevel.MaxCameraOffsetY = 0;
         }
 
         // ОБНОВЛЕНИЕ КАДРА
         public void Update(HashSet<Keys> pressedKeys)
         {
-            if (State != GameState.Playing) return; // Физика не работает на паузе и в меню
+            if (State != GameState.Playing) return;
 
             UpdateInput(pressedKeys);
             MovePlayerX(pressedKeys);
@@ -238,11 +295,16 @@ namespace LikhoStation
                 }
                 else if (CurrentLevel.Name == "Street")
                 {
-                    Player.Pos.X = CurrentLevel.WorldWidth - Player.Size.Width;
+                    LoadScene("SubwayDescent"); // Уходим в метро
+                }
+                else if (CurrentLevel.Name == "SubwayDescent")
+                {
+                    Player.Pos.X = CurrentLevel.WorldWidth - Player.Size.Width; // Тупик до след. этапа
                 }
             }
 
-            if (Player.Pos.Y > screenHeight + 200) LoadScene(CurrentLevel.Name);
+            // Увеличили зону смерти, чтобы на глубоких уровнях Яна не умирала
+            if (Player.Pos.Y > CurrentLevel.GroundY + 1000) LoadScene(CurrentLevel.Name);
         }
 
         private void UpdateItems(HashSet<Keys> keys)
@@ -261,12 +323,28 @@ namespace LikhoStation
 
         private void UpdateCamera()
         {
-            if (CurrentLevel.IsStaticCamera) CameraOffsetX = 0;
+            if (CurrentLevel.IsStaticCamera)
+            {
+                CameraOffsetX = 0;
+                CameraOffsetY = 0;
+            }
             else
             {
                 CameraOffsetX = Player.Pos.X - screenWidth / 2 + Player.Size.Width / 2;
                 if (CameraOffsetX < 0) CameraOffsetX = 0;
                 if (CameraOffsetX > CurrentLevel.WorldWidth - screenWidth) CameraOffsetX = CurrentLevel.WorldWidth - screenWidth;
+
+                // Слежение по оси Y (для эскалатора)
+                if (CurrentLevel.FollowY)
+                {
+                    CameraOffsetY = Player.Pos.Y - screenHeight * 0.5f; // Яна всегда по центру высоты во время спуска
+                    if (CameraOffsetY < 0) CameraOffsetY = 0;
+                    if (CameraOffsetY > CurrentLevel.MaxCameraOffsetY) CameraOffsetY = CurrentLevel.MaxCameraOffsetY; // Останавливаемся у пола станции
+                }
+                else
+                {
+                    CameraOffsetY = 0;
+                }
             }
         }
     }

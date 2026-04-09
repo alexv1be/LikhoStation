@@ -8,4 +8,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+	<ItemGroup>
+		<Compile Remove="LikhoStation.Tests\**" />
+		<EmbeddedResource Remove="LikhoStation.Tests\**" />
+		<None Remove="LikhoStation.Tests\**" />
+	</ItemGroup>
+	
 </Project>

@@ -35,19 +35,29 @@ namespace LikhoStation
 
         private void GameTimer_Tick(object sender, EventArgs e)
         {
-            engine.Update(pressedKeys); // Контроллер обновляет физику
-            Invalidate();               // Просим форму перерисоваться
+            // Если в контроллере выбрали "Выход" - закрываем приложение
+            if (engine.ShouldExit)
+            {
+                Application.Exit();
+            }
+
+            engine.Update(pressedKeys);
+            Invalidate();
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
             if (engine == null || renderer == null) return;
-            renderer.Draw(e.Graphics, engine, this.ClientSize.Width, this.ClientSize.Height); // Рендерер рисует картинку
+            renderer.Draw(e.Graphics, engine, this.ClientSize.Width, this.ClientSize.Height);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
+            // Добавляем клавишу в список для непрерывного движения
             if (!pressedKeys.Contains(e.KeyCode)) pressedKeys.Add(e.KeyCode);
+
+            // Отправляем одиночное нажатие в Контроллер (для меню и Esc)
+            engine.OnSingleKeyPress(e.KeyCode);
         }
 
         protected override void OnKeyUp(KeyEventArgs e)

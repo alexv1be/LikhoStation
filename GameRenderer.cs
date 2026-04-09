@@ -10,6 +10,14 @@ namespace LikhoStation
 
         public void Draw(Graphics g, GameController engine, int screenWidth, int screenHeight)
         {
+            // Если в главном меню - рисуем только его
+            if (engine.State == GameState.MainMenu)
+            {
+                DrawMainMenu(g, engine, screenWidth, screenHeight);
+                return;
+            }
+
+            // ОТРИСОВКА ИГРЫ
             blinkCounter++;
             Level level = engine.CurrentLevel;
             Player p = engine.Player;
@@ -17,7 +25,7 @@ namespace LikhoStation
             // Фон
             if (p.IsFocusMode) g.Clear(Color.FromArgb(5, 5, 10));
             else if (level.Name == "Kitchen") g.Clear(Color.FromArgb(50, 40, 40));
-            else g.Clear(Color.FromArgb(20, 25, 35)); // Улица (вечер)
+            else g.Clear(Color.FromArgb(20, 25, 35));
 
             // Сдвиг камеры
             g.TranslateTransform(-engine.CameraOffsetX, 0);
@@ -30,30 +38,66 @@ namespace LikhoStation
                 else g.FillRectangle(Brushes.Gray, plat);
             }
 
-            // Отрисовка предметов
             if (level.Name == "Kitchen" && !level.IsBagPickedUp)
             {
                 g.FillRectangle(Brushes.SaddleBrown, level.ItemBag);
                 if (p.IsFocusMode) g.DrawRectangle(new Pen(Color.Yellow, 4), level.ItemBag.X, level.ItemBag.Y, level.ItemBag.Width, level.ItemBag.Height);
             }
 
-            // Отрисовка Яны
             Brush playerBrush = Brushes.DarkRed;
-            if (!level.IsRealWorld) // Эффекты дыхания только на Изнанке
+            if (!level.IsRealWorld)
             {
                 if (p.IsExhausted) playerBrush = (blinkCounter % 16 < 8) ? Brushes.Red : Brushes.White;
                 else playerBrush = p.IsHoldingBreath ? Brushes.MediumPurple : Brushes.DarkRed;
             }
             g.FillRectangle(playerBrush, p.Pos.X, p.Pos.Y, p.Size.Width, p.Size.Height);
 
-            // Сброс камеры для UI и тумана
             g.ResetTransform();
 
-            // Рисуем туман ТОЛЬКО если он есть на уровне
             if (level.HasKhmar) DrawKhmar(g, p, engine.CameraOffsetX, screenWidth, screenHeight);
 
-            // Интерфейс
             DrawUI(g, level, p, engine.CameraOffsetX);
+
+            // ОТРИСОВКА ПАУЗЫ (ПОВЕРХ ИГРЫ)
+            if (engine.State == GameState.Paused)
+            {
+                DrawPauseMenu(g, engine, screenWidth, screenHeight);
+            }
+        }
+
+        private void DrawMainMenu(Graphics g, GameController engine, int w, int h)
+        {
+            g.Clear(Color.Black);
+            g.DrawString("СТАНЦИЯ ЛИХО", new Font("Georgia", 40, FontStyle.Bold), Brushes.DarkRed, w / 2 - 220, h / 4);
+
+            string[] options = engine.HasSaveFile ?
+                new string[] { "Новая игра", "Продолжить", "Выход" } :
+                new string[] { "Новая игра", "Выход" };
+
+            for (int i = 0; i < options.Length; i++)
+            {
+                Brush color = (i == engine.MenuIndex) ? Brushes.Yellow : Brushes.Gray;
+                string text = (i == engine.MenuIndex) ? "> " + options[i] + " <" : options[i];
+                g.DrawString(text, new Font("Arial", 20), color, w / 2 - 100, h / 2 + (i * 50));
+            }
+
+            g.DrawString("Управление: Стрелочки/WASD - Навигация, Enter - Выбор", new Font("Arial", 12), Brushes.DimGray, 20, h - 50);
+        }
+
+        private void DrawPauseMenu(Graphics g, GameController engine, int w, int h)
+        {
+            // Полупрозрачный черный фон для паузы
+            g.FillRectangle(new SolidBrush(Color.FromArgb(150, 0, 0, 0)), 0, 0, w, h);
+            g.DrawString("ПАУЗА", new Font("Georgia", 40, FontStyle.Bold), Brushes.White, w / 2 - 100, h / 4);
+
+            string[] options = { "Продолжить", "Сохранить и выйти в меню", "Выход из игры" };
+
+            for (int i = 0; i < options.Length; i++)
+            {
+                Brush color = (i == engine.MenuIndex) ? Brushes.Yellow : Brushes.White;
+                string text = (i == engine.MenuIndex) ? "> " + options[i] + " <" : options[i];
+                g.DrawString(text, new Font("Arial", 20), color, w / 2 - 180, h / 2 + (i * 50));
+            }
         }
 
         private void DrawKhmar(Graphics g, Player p, float camX, int width, int height)
@@ -90,7 +134,6 @@ namespace LikhoStation
                 g.DrawString("УЛИЦА (Путь к метро)", new Font("Arial", 20), Brushes.LightSteelBlue, 40, 40);
             }
 
-            // Шкалу дыхания рисуем ТОЛЬКО на Изнанке
             if (!level.IsRealWorld)
             {
                 Brush textBrush = p.IsExhausted ? Brushes.Red : Brushes.White;

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using System.IO;
 
 namespace LikhoStation
 {
@@ -11,16 +12,106 @@ namespace LikhoStation
         public Level CurrentLevel { get; private set; }
         public float CameraOffsetX { get; private set; }
 
+        // МЕНЮ И СОСТОЯНИЯ
+        public GameState State { get; private set; } = GameState.MainMenu;
+        public int MenuIndex { get; private set; } = 0;
+        public bool HasSaveFile { get; private set; }
+        public bool ShouldExit { get; private set; } = false;
+
         private int screenWidth;
         private int screenHeight;
         private float gravity = 1.2f;
+        private string saveFilePath = "save.txt";
 
         public GameController(int width, int height)
         {
             screenWidth = width;
             screenHeight = height;
             Player = new Player();
+            HasSaveFile = File.Exists(saveFilePath);
+        }
+
+        // ЛОГИКА ОДИНОЧНЫХ НАЖАТИЙ (ДЛЯ МЕНЮ И ПАУЗЫ)
+        public void OnSingleKeyPress(Keys key)
+        {
+            if (State == GameState.MainMenu)
+            {
+                if (key == Keys.Up || key == Keys.W) MenuIndex--;
+                if (key == Keys.Down || key == Keys.S) MenuIndex++;
+
+                int maxIndex = HasSaveFile ? 2 : 1;
+                if (MenuIndex < 0) MenuIndex = maxIndex;
+                if (MenuIndex > maxIndex) MenuIndex = 0;
+
+                if (key == Keys.Enter)
+                {
+                    if (MenuIndex == 0) StartNewGame();
+                    else if (MenuIndex == 1 && HasSaveFile) LoadGame();
+                    else if (MenuIndex == 1 && !HasSaveFile) ShouldExit = true; // Если нет сейва, 1 - это Выход
+                    else if (MenuIndex == 2) ShouldExit = true;
+                }
+            }
+            else if (State == GameState.Playing)
+            {
+                if (key == Keys.Escape)
+                {
+                    State = GameState.Paused;
+                    MenuIndex = 0; // Сбрасываем курсор на "Продолжить"
+                }
+            }
+            else if (State == GameState.Paused)
+            {
+                if (key == Keys.Up || key == Keys.W) MenuIndex--;
+                if (key == Keys.Down || key == Keys.S) MenuIndex++;
+
+                if (MenuIndex < 0) MenuIndex = 2;
+                if (MenuIndex > 2) MenuIndex = 0;
+
+                if (key == Keys.Enter)
+                {
+                    if (MenuIndex == 0) State = GameState.Playing; // Продолжить
+                    else if (MenuIndex == 1) // Сохранить и выйти в меню
+                    {
+                        SaveGame();
+                        State = GameState.MainMenu;
+                        MenuIndex = 0;
+                    }
+                    else if (MenuIndex == 2) ShouldExit = true; // Выйти из игры
+                }
+                else if (key == Keys.Escape) State = GameState.Playing; // Снять с паузы
+            }
+        }
+
+        // --- СОХРАНЕНИЕ И ЗАГРУЗКА ---
+        private void SaveGame()
+        {
+            string data = $"{CurrentLevel.Name},{CurrentLevel.IsBagPickedUp}";
+            File.WriteAllText(saveFilePath, data);
+            HasSaveFile = true;
+        }
+
+        private void LoadGame()
+        {
+            if (File.Exists(saveFilePath))
+            {
+                string[] data = File.ReadAllText(saveFilePath).Split(',');
+                // Проверяем, что в массиве есть хотя бы 2 элемента, чтобы избежать вылета
+                if (data.Length >= 2)
+                {
+                    string savedScene = data[0];
+                    bool isBagPickedUp = bool.Parse(data[1]);
+
+                    LoadScene(savedScene);
+                    CurrentLevel.IsBagPickedUp = isBagPickedUp;
+                    State = GameState.Playing;
+                }
+            }
+        }
+
+        private void StartNewGame()
+        {
             LoadScene("Kitchen");
+            State = GameState.Playing;
         }
 
         public void LoadScene(string sceneName)
@@ -28,7 +119,6 @@ namespace LikhoStation
             CurrentLevel = new Level { Name = sceneName };
             CurrentLevel.GroundY = screenHeight * 0.75f;
 
-            // Сброс дыхания
             Player.Oxygen = Player.MaxOxygen;
             Player.IsExhausted = false;
 
@@ -63,8 +153,11 @@ namespace LikhoStation
             }
         }
 
+        // ОБНОВЛЕНИЕ КАДРА
         public void Update(HashSet<Keys> pressedKeys)
         {
+            if (State != GameState.Playing) return; // Физика не работает на паузе и в меню
+
             UpdateInput(pressedKeys);
             MovePlayerX(pressedKeys);
             MovePlayerY(pressedKeys);
@@ -80,7 +173,7 @@ namespace LikhoStation
             if (Player.Oxygen <= 0) Player.IsExhausted = true;
             if (Player.Oxygen > Player.MaxOxygen * 0.3f) Player.IsExhausted = false;
 
-            if (keys.Contains(Keys.C) && !Player.IsExhausted && !CurrentLevel.IsRealWorld) // Прятаться можно только на Изнанке
+            if (keys.Contains(Keys.C) && !Player.IsExhausted && !CurrentLevel.IsRealWorld)
             {
                 Player.IsHoldingBreath = true;
                 Player.Oxygen -= 0.3f;
@@ -146,7 +239,6 @@ namespace LikhoStation
                 else if (CurrentLevel.Name == "Street")
                 {
                     Player.Pos.X = CurrentLevel.WorldWidth - Player.Size.Width;
-                    // Здесь позже будет LoadScene("SubwayEntrance");
                 }
             }
 
@@ -169,10 +261,7 @@ namespace LikhoStation
 
         private void UpdateCamera()
         {
-            if (CurrentLevel.IsStaticCamera)
-            {
-                CameraOffsetX = 0;
-            }
+            if (CurrentLevel.IsStaticCamera) CameraOffsetX = 0;
             else
             {
                 CameraOffsetX = Player.Pos.X - screenWidth / 2 + Player.Size.Width / 2;

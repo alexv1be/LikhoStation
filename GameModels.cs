@@ -3,7 +3,14 @@ using System.Drawing;
 
 namespace LikhoStation
 {
-    // Модель Игрока
+    // Состояния игры
+    public enum GameState
+    {
+        MainMenu,
+        Playing,
+        Paused
+    }
+
     public class Player
     {
         public PointF Pos;
@@ -20,17 +27,15 @@ namespace LikhoStation
         public bool IsFocusMode = false;
     }
 
-    // Модель Уровня
     public class Level
     {
         public string Name;
         public int WorldWidth;
         public float GroundY;
 
-        // Настройки атмосферы и камеры
         public bool HasKhmar = false;
         public bool IsStaticCamera = false;
-        public bool IsRealWorld = true; // Если true - врагов нет
+        public bool IsRealWorld = true;
 
         public List<RectangleF> Platforms = new List<RectangleF>();
         public RectangleF ItemBag;

@@ -51,5 +51,11 @@ namespace LikhoStation
         // Объект переднего плана (рисуется ПОВЕРХ героини)
         public RectangleF ForegroundObject;
         public bool HasForegroundObject = false;
+
+        // Переменные для диалогов
+        public bool HasPlayedIntroDialog = false;
+        public bool IsDialogActive = false;
+        public int DialogStep = 0;
+        public int DialogTimer = 0;
     }
 }

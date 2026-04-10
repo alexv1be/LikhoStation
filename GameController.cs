@@ -32,7 +32,7 @@ namespace LikhoStation
             HasSaveFile = File.Exists(saveFilePath);
         }
 
-        // --- ЛОГИКА ОДИНОЧНЫХ НАЖАТИЙ (ДЛЯ МЕНЮ И ПАУЗЫ) ---
+        // ЛОГИКА ОДИНОЧНЫХ НАЖАТИЙ (ДЛЯ МЕНЮ И ПАУЗЫ)
         public void OnSingleKeyPress(Keys key)
         {
             if (State == GameState.MainMenu) HandleMainMenuInput(key);
@@ -142,8 +142,8 @@ namespace LikhoStation
             CurrentLevel.WorldWidth = screenWidth;
             CurrentLevel.GroundY = screenHeight * 0.97f; // Опустили горизонт
 
-            Player.Size = new Size(100, 380); // Яна в 2 раза выше
-            Player.Pos = new PointF(150, CurrentLevel.GroundY - Player.Size.Height);
+            Player.Size = new Size(130, 480);
+            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
 
             CurrentLevel.Platforms.Clear();
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, CurrentLevel.WorldWidth, screenHeight - CurrentLevel.GroundY));
@@ -159,7 +159,7 @@ namespace LikhoStation
             CurrentLevel.IsStaticCamera = false;
             CurrentLevel.WorldWidth = 3500;
 
-            Player.Size = new Size(80, 160); // Увеличили масштаб на улице
+            Player.Size = new Size(110, 240);
             Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
 
             // Сделали ямы меньше
@@ -219,12 +219,46 @@ namespace LikhoStation
         {
             if (State != GameState.Playing) return;
 
+            UpdateDialog(); // Проверяем, не началась ли кат-сцена
+
             UpdateInput(pressedKeys);
             MovePlayerX(pressedKeys);
             MovePlayerY(pressedKeys);
             CheckBoundaries();
             UpdateItems(pressedKeys);
             UpdateCamera();
+        }
+
+        private void UpdateDialog()
+        {
+            if (CurrentLevel.Name == "Kitchen" && !CurrentLevel.HasPlayedIntroDialog)
+            {
+                // Если Яна дошла до X=500 и диалог еще не начался
+                if (Player.Pos.X >= 500 && !CurrentLevel.IsDialogActive)
+                {
+                    CurrentLevel.IsDialogActive = true;
+                    CurrentLevel.DialogStep = 1; // Реплика Бабушки
+                    CurrentLevel.DialogTimer = 0;
+                }
+
+                if (CurrentLevel.IsDialogActive)
+                {
+                    CurrentLevel.DialogTimer++; // Таймер тикает (50 тиков = 1 секунда)
+
+                    // Через 125 тиков отвечает Яна
+                    if (CurrentLevel.DialogStep == 1 && CurrentLevel.DialogTimer > 125)
+                    {
+                        CurrentLevel.DialogStep = 2;
+                        CurrentLevel.DialogTimer = 0;
+                    }
+                    // Еще через 75 тиков диалог заканчивается
+                    else if (CurrentLevel.DialogStep == 2 && CurrentLevel.DialogTimer > 75)
+                    {
+                        CurrentLevel.IsDialogActive = false;
+                        CurrentLevel.HasPlayedIntroDialog = true;
+                    }
+                }
+            }
         }
 
         private void UpdateInput(HashSet<Keys> keys)
@@ -250,7 +284,7 @@ namespace LikhoStation
 
         private void MovePlayerX(HashSet<Keys> keys)
         {
-            if (Player.IsHoldingBreath) return;
+            if (Player.IsHoldingBreath || CurrentLevel.IsDialogActive) return; // Яна замерла
 
             float nextX = Player.Pos.X;
             if (keys.Contains(Keys.A) || keys.Contains(Keys.Left)) nextX -= Player.Speed;
@@ -267,6 +301,8 @@ namespace LikhoStation
 
         private void MovePlayerY(HashSet<Keys> keys)
         {
+            if (CurrentLevel.IsDialogActive) return; // Физика Y тоже на паузе
+
             // Запрет прыжка на кухне
             bool canJump = CurrentLevel.Name != "Kitchen";
             if (keys.Contains(Keys.Space) && Player.IsGrounded && !Player.IsHoldingBreath && canJump)

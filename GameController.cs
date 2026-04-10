@@ -140,12 +140,16 @@ namespace LikhoStation
             CurrentLevel.HasKhmar = false;
             CurrentLevel.IsStaticCamera = true;
             CurrentLevel.WorldWidth = screenWidth;
+            CurrentLevel.GroundY = screenHeight * 0.97f; // Опустили горизонт
 
-            Player.Size = new Size(100, 200);
+            Player.Size = new Size(100, 380); // Яна в 2 раза выше
             Player.Pos = new PointF(150, CurrentLevel.GroundY - Player.Size.Height);
 
+            CurrentLevel.Platforms.Clear();
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, CurrentLevel.WorldWidth, screenHeight - CurrentLevel.GroundY));
-            CurrentLevel.ItemBag = new RectangleF(700, CurrentLevel.GroundY - 60, 60, 60);
+
+            // Сумка лежит на табуретке
+            CurrentLevel.ItemBag = new RectangleF(700, CurrentLevel.GroundY - 250, 60, 60);
         }
 
         private void LoadStreet()
@@ -225,7 +229,9 @@ namespace LikhoStation
 
         private void UpdateInput(HashSet<Keys> keys)
         {
-            Player.IsFocusMode = keys.Contains(Keys.ShiftKey);
+            // Отключаем чутье художника на кухне
+            if (CurrentLevel.Name == "Kitchen") Player.IsFocusMode = false;
+            else Player.IsFocusMode = keys.Contains(Keys.ShiftKey);
 
             if (Player.Oxygen <= 0) Player.IsExhausted = true;
             if (Player.Oxygen > Player.MaxOxygen * 0.3f) Player.IsExhausted = false;
@@ -261,7 +267,9 @@ namespace LikhoStation
 
         private void MovePlayerY(HashSet<Keys> keys)
         {
-            if (keys.Contains(Keys.Space) && Player.IsGrounded && !Player.IsHoldingBreath)
+            // Запрет прыжка на кухне
+            bool canJump = CurrentLevel.Name != "Kitchen";
+            if (keys.Contains(Keys.Space) && Player.IsGrounded && !Player.IsHoldingBreath && canJump)
             {
                 Player.VelocityY = Player.JumpPower;
                 Player.IsGrounded = false;

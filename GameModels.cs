@@ -13,7 +13,6 @@ namespace LikhoStation
         public float VelocityY = 0;
         public float JumpPower = -24f;
         public bool IsGrounded = false;
-
         public float Oxygen = 100f;
         public float MaxOxygen = 100f;
         public bool IsHoldingBreath = false;

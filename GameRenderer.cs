@@ -168,15 +168,11 @@ namespace LikhoStation
         {
             Level level = engine.CurrentLevel;
             Player p = engine.Player;
+
             Brush pBrush = p.IsExhausted ? ((blinkCounter % 16 < 8) ? Brushes.Red : Brushes.White) : (p.IsHoldingBreath ? Brushes.MediumPurple : Brushes.DarkRed);
 
             g.FillRectangle(level.IsRealWorld ? Brushes.DarkRed : pBrush, p.Pos.X, p.Pos.Y, p.Size.Width, p.Size.Height);
 
-            if (level.HasForegroundObject)
-            {
-                g.FillRectangle(new SolidBrush(Color.FromArgb(15, 15, 20)), level.ForegroundObject);
-                DrawOutlineText(g, "МЕТРО", new Font(pixelFont, 24), Brushes.DarkRed, (int)level.ForegroundObject.X + 30, (int)level.ForegroundObject.Y + 150);
-            }
         }
 
         private void DrawKhmar(Graphics g, Player p, float camX, float camY, int width, int height)

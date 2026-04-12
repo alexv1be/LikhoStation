@@ -176,12 +176,21 @@ namespace LikhoStation
             CurrentLevel.HasForegroundObject = true;
         }
 
+        private void CheckLevelTriggers()
+        {
+            // Как только Яна на Улице доходит до 3000 пикселей - сразу грузим метро
+            if (CurrentLevel.Name == "Street" && Player.Pos.X >= 3000)
+                LoadSubwayDescent();
+        }
+
         private void LoadSubwayDescent()
         {
+            CurrentLevel = new Level { Name = "SubwayDescent" };
+
             CurrentLevel.IsRealWorld = true;
             CurrentLevel.HasKhmar = false;
             CurrentLevel.IsStaticCamera = false;
-            CurrentLevel.FollowY = true; // Включаем вертикальную камеру
+            CurrentLevel.FollowY = true;
             CurrentLevel.WorldWidth = 4000;
 
             Player.Size = new Size(80, 160);
@@ -190,28 +199,30 @@ namespace LikhoStation
             float startY = screenHeight * 0.2f;
             Player.Pos = new PointF(100, startY - Player.Size.Height);
 
-            // Входная площадка
+            CurrentLevel.Platforms.Clear();
             CurrentLevel.Platforms.Add(new RectangleF(0, startY, 400, screenHeight * 3));
+            GenerateEscalator(startY);
 
-            // Генерация Эскалатора (40 ступенек в цикле)
+            float bottomY = startY + (40 * 35); // 40 ступенек по 35 пикселей высотой
+            CurrentLevel.GroundY = bottomY;
+            CurrentLevel.Platforms.Add(new RectangleF(400 + (40 * 60), bottomY, 2000, screenHeight * 3));
+
+            CurrentLevel.MaxCameraOffsetY = bottomY - screenHeight * 0.85f;
+            if (CurrentLevel.MaxCameraOffsetY < 0) CurrentLevel.MaxCameraOffsetY = 0;
+        }
+
+        private void GenerateEscalator(float startY)
+        {
             int steps = 40;
             float stepW = 60;
             float stepH = 35;
 
             for (int i = 0; i < steps; i++)
             {
-                CurrentLevel.Platforms.Add(new RectangleF(400 + (i * stepW), startY + (i * stepH), stepW, screenHeight * 3));
+                float x = 400 + (i * stepW);
+                float y = startY + (i * stepH);
+                CurrentLevel.Platforms.Add(new RectangleF(x, y, stepW, screenHeight * 3));
             }
-
-            // Платформа станции в самом низу
-            float bottomY = startY + (steps * stepH);
-            CurrentLevel.GroundY = bottomY; // Задаем дно уровня
-
-            CurrentLevel.Platforms.Add(new RectangleF(400 + (steps * stepW), bottomY, 2000, screenHeight * 3));
-
-            // Настройка лимита камеры: горизонт внизу будет на 85% экрана
-            CurrentLevel.MaxCameraOffsetY = bottomY - screenHeight * 0.85f;
-            if (CurrentLevel.MaxCameraOffsetY < 0) CurrentLevel.MaxCameraOffsetY = 0;
         }
 
         // ОБНОВЛЕНИЕ КАДРА
@@ -220,7 +231,7 @@ namespace LikhoStation
             if (State != GameState.Playing) return;
 
             UpdateDialog(); // Проверяем, не началась ли кат-сцена
-
+            CheckLevelTriggers();
             UpdateInput(pressedKeys);
             MovePlayerX(pressedKeys);
             MovePlayerY(pressedKeys);

@@ -148,8 +148,7 @@ namespace LikhoStation
             CurrentLevel.Platforms.Clear();
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, CurrentLevel.WorldWidth, screenHeight - CurrentLevel.GroundY));
 
-            // Сумка лежит на табуретке
-            CurrentLevel.ItemBag = new RectangleF(700, CurrentLevel.GroundY - 250, 60, 60);
+            CurrentLevel.ItemBag = new RectangleF(630, CurrentLevel.GroundY - 390, 200, 200);
         }
 
         private void LoadStreet()
@@ -158,21 +157,22 @@ namespace LikhoStation
             CurrentLevel.HasKhmar = false;
             CurrentLevel.IsStaticCamera = false;
             CurrentLevel.WorldWidth = 3500;
+            CurrentLevel.GroundY = screenHeight * 0.91f; // Опустили горизонт
 
             Player.Size = new Size(110, 240);
             Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
 
-            // Сделали ямы меньше
-            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 1000, screenHeight));
-            CurrentLevel.Platforms.Add(new RectangleF(1150, CurrentLevel.GroundY, 800, screenHeight));
-            CurrentLevel.Platforms.Add(new RectangleF(2100, CurrentLevel.GroundY, 1400, screenHeight));
+            CurrentLevel.Platforms.Clear();
 
-            CurrentLevel.Platforms.Add(new RectangleF(600, CurrentLevel.GroundY - 100, 120, 100));
-            CurrentLevel.Platforms.Add(new RectangleF(1500, CurrentLevel.GroundY - 160, 150, 160));
+            // Сугроб (меняй координаты X и Y под картинку)
+            CurrentLevel.Platforms.Add(new RectangleF(400, CurrentLevel.GroundY - 150, 200, 150));
 
-            // Здание Метро в конце улицы (рисуется ПОВЕРХ Яны)
-            float subwayHeight = 500f;
-            CurrentLevel.ForegroundObject = new RectangleF(3200, CurrentLevel.GroundY - subwayHeight, 300, subwayHeight);
+            // Три куска пола (между ними ямы)
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 1100, screenHeight));
+            CurrentLevel.Platforms.Add(new RectangleF(1400, CurrentLevel.GroundY, 900, screenHeight));
+            CurrentLevel.Platforms.Add(new RectangleF(2600, CurrentLevel.GroundY, 1300, screenHeight));
+
+            CurrentLevel.ForegroundObject = new RectangleF(3200, CurrentLevel.GroundY - 500, 300, 500);
             CurrentLevel.HasForegroundObject = true;
         }
 
@@ -231,33 +231,45 @@ namespace LikhoStation
 
         private void UpdateDialog()
         {
-            if (CurrentLevel.Name == "Kitchen" && !CurrentLevel.HasPlayedIntroDialog)
+            if (CurrentLevel.Name != "Kitchen" || CurrentLevel.HasPlayedIntroDialog) return;
+
+            if (Player.Pos.X >= 500 && CurrentLevel.DialogStep == 0)
             {
-                // Если Яна дошла до X=500 и диалог еще не начался
-                if (Player.Pos.X >= 500 && !CurrentLevel.IsDialogActive)
-                {
-                    CurrentLevel.IsDialogActive = true;
-                    CurrentLevel.DialogStep = 1; // Реплика Бабушки
-                    CurrentLevel.DialogTimer = 0;
-                }
+                CurrentLevel.DialogStep = 1;
+                CurrentLevel.IsDialogActive = true;
+            }
 
-                if (CurrentLevel.IsDialogActive)
-                {
-                    CurrentLevel.DialogTimer++; // Таймер тикает (50 тиков = 1 секунда)
+            if (CurrentLevel.DialogStep > 0) ProcessDialogState();
+        }
 
-                    // Через 125 тиков отвечает Яна
-                    if (CurrentLevel.DialogStep == 1 && CurrentLevel.DialogTimer > 125)
-                    {
-                        CurrentLevel.DialogStep = 2;
-                        CurrentLevel.DialogTimer = 0;
-                    }
-                    // Еще через 75 тиков диалог заканчивается
-                    else if (CurrentLevel.DialogStep == 2 && CurrentLevel.DialogTimer > 75)
-                    {
-                        CurrentLevel.IsDialogActive = false;
-                        CurrentLevel.HasPlayedIntroDialog = true;
-                    }
-                }
+        private void ProcessDialogState()
+        {
+            CurrentLevel.DialogTimer++;
+            int t = CurrentLevel.DialogTimer;
+            int limit = (CurrentLevel.DialogStep == 2) ? 50 : 80;
+
+            if (t <= 15) CurrentLevel.DialogAlpha = t * 17;
+            else if (t >= (limit - 15) && t <= limit) CurrentLevel.DialogAlpha = (limit - t) * 17;
+            else if (t > limit) CurrentLevel.DialogAlpha = 0;
+            else CurrentLevel.DialogAlpha = 255;
+
+            if (CurrentLevel.DialogAlpha > 255) CurrentLevel.DialogAlpha = 255;
+            if (CurrentLevel.DialogAlpha < 0) CurrentLevel.DialogAlpha = 0;
+
+            if (t > limit) AdvanceDialogPhase();
+        }
+
+        private void AdvanceDialogPhase()
+        {
+            CurrentLevel.DialogTimer = 0;
+            CurrentLevel.DialogStep++;
+
+            if (CurrentLevel.DialogStep == 3) CurrentLevel.IsDialogActive = false;
+
+            if (CurrentLevel.DialogStep > 3)
+            {
+                CurrentLevel.DialogStep = 0;
+                CurrentLevel.HasPlayedIntroDialog = true;
             }
         }
 
@@ -284,7 +296,7 @@ namespace LikhoStation
 
         private void MovePlayerX(HashSet<Keys> keys)
         {
-            if (Player.IsHoldingBreath || CurrentLevel.IsDialogActive) return; // Яна замерла
+            if (Player.IsHoldingBreath || CurrentLevel.IsDialogActive) return;
 
             float nextX = Player.Pos.X;
             if (keys.Contains(Keys.A) || keys.Contains(Keys.Left)) nextX -= Player.Speed;
@@ -301,9 +313,8 @@ namespace LikhoStation
 
         private void MovePlayerY(HashSet<Keys> keys)
         {
-            if (CurrentLevel.IsDialogActive) return; // Физика Y тоже на паузе
+            if (CurrentLevel.IsDialogActive) return;
 
-            // Запрет прыжка на кухне
             bool canJump = CurrentLevel.Name != "Kitchen";
             if (keys.Contains(Keys.Space) && Player.IsGrounded && !Player.IsHoldingBreath && canJump)
             {

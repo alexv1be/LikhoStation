@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
+using System.Drawing.Imaging;
 using System.IO;
 
 namespace LikhoStation
@@ -10,34 +11,40 @@ namespace LikhoStation
         private int visibilityRadius = 350;
         private int blinkCounter = 0;
 
-        private Image menuBackground;
-        private Image kitchenBackground;
+        private Image menuBg;
+        private Image kitchenBg;
+        private Image bagImg;
+        private Image streetBg;
+        private Image dialog1, dialog2, dialog3;
 
-        // Инструменты для своего шрифта
         private PrivateFontCollection customFonts = new PrivateFontCollection();
         private FontFamily pixelFont;
 
         public GameRenderer()
         {
-            if (File.Exists(@"images\menu.png")) menuBackground = Image.FromFile(@"images\menu.png");
-            if (File.Exists(@"images\kitchen.png")) kitchenBackground = Image.FromFile(@"images\kitchen.png");
+            if (File.Exists(@"images\menu.png")) menuBg = Image.FromFile(@"images\menu.png");
+            if (File.Exists(@"images\kitchen.png")) kitchenBg = Image.FromFile(@"images\kitchen.png");
+            if (File.Exists(@"images\bag.png")) bagImg = Image.FromFile(@"images\bag.png");
+            if (File.Exists(@"images\street_bg.png")) streetBg = Image.FromFile(@"images\street_bg.png");
 
-            // Подгружаем кастомный пиксельный шрифт
+            if (File.Exists(@"images\dialogue_kitchen_grandma_1.png")) dialog1 = Image.FromFile(@"images\dialogue_kitchen_grandma_1.png");
+            if (File.Exists(@"images\dialogue_kitchen_yana_1.png")) dialog2 = Image.FromFile(@"images\dialogue_kitchen_yana_1.png");
+            if (File.Exists(@"images\dialogue_kitchen_grandma_2.png")) dialog3 = Image.FromFile(@"images\dialogue_kitchen_grandma_2.png");
+
             if (File.Exists(@"images\LCD40x2Display-Regular.otf"))
             {
                 customFonts.AddFontFile(@"images\LCD40x2Display-Regular.otf");
                 pixelFont = customFonts.Families[0];
             }
-            else pixelFont = new FontFamily("Courier New"); // Резервный, если файл не найден
+            else pixelFont = new FontFamily("Courier New");
         }
 
-        // ГЛАВНЫЙ МЕТОД ОТРИСОВКИ
         public void Draw(Graphics g, GameController engine, int screenWidth, int screenHeight)
         {
             if (engine.State == GameState.MainMenu) { DrawMainMenu(g, engine, screenWidth, screenHeight); return; }
 
             blinkCounter++;
-            g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit; // Отключаем сглаживание для пиксель-арта
+            g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
 
             DrawBackground(g, engine, screenWidth, screenHeight);
 
@@ -52,12 +59,23 @@ namespace LikhoStation
             if (engine.State == GameState.Paused) DrawPauseMenu(g, engine, screenWidth, screenHeight);
         }
 
-        // УНИВЕРСАЛЬНАЯ ОБВОДКА ТЕКСТА
+        private void DrawImageWithAlpha(Graphics g, Image img, Rectangle dest, int alpha)
+        {
+            if (img == null) return;
+            float a = alpha / 255f;
+            ColorMatrix cm = new ColorMatrix();
+            cm.Matrix33 = a;
+            using (ImageAttributes ia = new ImageAttributes())
+            {
+                ia.SetColorMatrix(cm);
+                g.DrawImage(img, dest, 0, 0, img.Width, img.Height, GraphicsUnit.Pixel, ia);
+            }
+        }
+
         private void DrawOutlineText(Graphics g, string text, Font f, Brush c, int x, int y, bool isStrong = false)
         {
             Brush ob = Brushes.Black;
             int t = isStrong ? 4 : 2;
-
             g.DrawString(text, f, ob, x - t, y);
             g.DrawString(text, f, ob, x + t, y);
             g.DrawString(text, f, ob, x, y - t);
@@ -73,12 +91,10 @@ namespace LikhoStation
             g.DrawString(text, f, c, x, y);
         }
 
-        // МЕНЮ
         private void DrawMainMenu(Graphics g, GameController engine, int w, int h)
         {
             g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
-
-            if (menuBackground != null) g.DrawImage(menuBackground, 0, 0, w, h);
+            if (menuBg != null) g.DrawImage(menuBg, 0, 0, w, h);
             else g.Clear(Color.Black);
 
             DrawOutlineText(g, "СТАНЦИЯ ЛИХО", new Font(pixelFont, 24), Brushes.White, w / 2 - 250, h / 4, true);
@@ -92,14 +108,12 @@ namespace LikhoStation
                 string text = (i == engine.MenuIndex) ? "> " + opts[i] + " <" : opts[i];
                 DrawOutlineText(g, text, menuFont, color, w / 2 + 150, h / 2 + (i * 50));
             }
-
-            DrawOutlineText(g, "Управление: WASD - Навигация, Enter - Выбор", new Font(pixelFont, 8), Brushes.White, 20, h - 30);
+            DrawOutlineText(g, "Управление: WS - Навигация, Enter - Выбор", new Font(pixelFont, 8), Brushes.White, 20, h - 30);
         }
 
         private void DrawPauseMenu(Graphics g, GameController engine, int w, int h)
         {
             g.FillRectangle(new SolidBrush(Color.FromArgb(150, 0, 0, 0)), 0, 0, w, h);
-
             DrawOutlineText(g, "ПАУЗА", new Font(pixelFont, 24), Brushes.White, w / 2 - 100, h / 4, true);
 
             string[] options = { "Продолжить", "Сохранить и выйти", "Выход из игры" };
@@ -113,17 +127,21 @@ namespace LikhoStation
             }
         }
 
-        // КОМПОНЕНТЫ МИРА
         private void DrawBackground(Graphics g, GameController engine, int w, int h)
         {
             Level level = engine.CurrentLevel;
             if (engine.Player.IsFocusMode) g.Clear(Color.FromArgb(5, 5, 10));
             else if (level.Name == "Kitchen")
             {
-                if (kitchenBackground != null) g.DrawImage(kitchenBackground, 0, 0, w, h);
+                if (kitchenBg != null) g.DrawImage(kitchenBg, 0, 0, w, h);
                 else g.Clear(Color.FromArgb(50, 40, 40));
             }
-            else if (level.Name == "Street") g.Clear(Color.FromArgb(20, 25, 35));
+            else if (level.Name == "Street")
+            {
+                // Добавлено -engine.CameraOffsetX по координате X
+                if (streetBg != null) g.DrawImage(streetBg, -engine.CameraOffsetX, 0, level.WorldWidth, h);
+                else g.Clear(Color.FromArgb(20, 25, 35));
+            }
             else if (level.Name == "SubwayDescent") g.Clear(Color.FromArgb(30, 30, 35));
         }
 
@@ -134,12 +152,14 @@ namespace LikhoStation
             {
                 if (engine.Player.IsFocusMode) g.DrawRectangle(new Pen(Color.FromArgb(50, 255, 255, 255), 2), plat.X, plat.Y, plat.Width, plat.Height);
                 else if (level.Name == "SubwayDescent") g.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 45)), plat);
-                else if (level.Name != "Kitchen") g.FillRectangle(Brushes.Gray, plat);
+                else if (level.Name != "Kitchen" && level.Name != "Street") g.FillRectangle(Brushes.Gray, plat);
             }
 
             if (level.Name == "Kitchen" && !level.IsBagPickedUp)
             {
-                g.FillRectangle(Brushes.SaddleBrown, level.ItemBag);
+                if (bagImg != null) g.DrawImage(bagImg, level.ItemBag);
+                else g.FillRectangle(Brushes.SaddleBrown, level.ItemBag); // Запасной вариант
+
                 if (engine.Player.IsFocusMode) g.DrawRectangle(new Pen(Color.Yellow, 4), level.ItemBag.X, level.ItemBag.Y, level.ItemBag.Width, level.ItemBag.Height);
             }
         }
@@ -171,7 +191,6 @@ namespace LikhoStation
             }
         }
 
-        // ИНТЕРФЕЙС
         private void DrawUI(Graphics g, Level level, Player p, float camX, float camY)
         {
             Font uiFont = new Font(pixelFont, 12);
@@ -181,7 +200,9 @@ namespace LikhoStation
             else if (level.Name == "SubwayDescent") DrawOutlineText(g, "СПУСК В МЕТРО", uiFont, Brushes.DarkGray, 40, 40);
 
             if (!level.IsRealWorld) DrawOxygenUI(g, p);
-            if (p.IsFocusMode) DrawOutlineText(g, "ЧУТЬЕ АКТИВНО", new Font(pixelFont, 12), Brushes.Cyan, 40, 130);
+            if (p.IsFocusMode) DrawOutlineText(g, "ЧУТЬЕ АКТИВНО", new Font(pixelFont, 8), Brushes.Cyan, 40, 130);
+
+            DrawDialogUI(g, level, p, 1920, 1080);
         }
 
         private void DrawKitchenUI(Graphics g, Level level, float camX, float camY)
@@ -204,6 +225,48 @@ namespace LikhoStation
             DrawOutlineText(g, text, new Font(pixelFont, 8), textBrush, 40, 80);
             g.DrawRectangle(Pens.White, 40, 100, 200, 15);
             g.FillRectangle(p.IsExhausted ? Brushes.Red : Brushes.LightSkyBlue, 41, 101, (p.Oxygen / p.MaxOxygen) * 198, 13);
+        }
+
+        private void DrawDialogUI(Graphics g, Level level, Player p, int w, int h)
+        {
+            if (level.DialogStep == 0) return;
+
+            // Определяем, чьё сейчас окно и какие у него исходные размеры
+            Image img = null;
+            Size origSize = new Size(3464, 1350); // Дефолт
+
+            if (level.DialogStep == 1) { img = dialog1; origSize = new Size(3464, 1687); }
+            else if (level.DialogStep == 2) { img = dialog2; origSize = new Size(3464, 1350); }
+            else if (level.DialogStep == 3) { img = dialog3; origSize = new Size(3464, 1354); }
+
+            if (img == null) return;
+
+            // Масштабируем (коэффициент 0.15)
+            int finalW = (int)(origSize.Width * 0.15f);
+            int finalH = (int)(origSize.Height * 0.15f);
+
+            // Рассчитываем позицию
+            Rectangle rect = GetDialogRect(level, p, finalW, finalH);
+
+            DrawImageWithAlpha(g, img, rect, level.DialogAlpha);
+        }
+
+        private Rectangle GetDialogRect(Level level, Player p, int drawW, int drawH)
+        {
+            int posX, posY;
+
+            if (level.DialogStep == 2) // Окно Яны (над головой)
+            {
+                posX = (int)p.Pos.X + 80 + (p.Size.Width / 4) - (drawW / 4);
+                posY = (int)p.Pos.Y - drawH - 0;
+            }
+            else // Окно Бабушки (возле кресла справа)
+            {
+                posX = 1500 - (drawW / 2);
+                posY = 600 - drawH;
+            }
+
+            return new Rectangle(posX, posY, drawW, drawH);
         }
     }
 }

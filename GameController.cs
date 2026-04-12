@@ -257,7 +257,7 @@ namespace LikhoStation
         {
             CurrentLevel.DialogTimer++;
             int t = CurrentLevel.DialogTimer;
-            int limit = (CurrentLevel.DialogStep == 2) ? 50 : 80;
+            int limit = (CurrentLevel.DialogStep == 2) ? 80 : 110;
 
             if (t <= 15) CurrentLevel.DialogAlpha = t * 17;
             else if (t >= (limit - 15) && t <= limit) CurrentLevel.DialogAlpha = (limit - t) * 17;
@@ -309,9 +309,11 @@ namespace LikhoStation
         {
             if (Player.IsHoldingBreath || CurrentLevel.IsDialogActive) return;
 
+            float currentSpeed = Player.IsGrounded ? Player.Speed : Player.AirSpeed;
+
             float nextX = Player.Pos.X;
-            if (keys.Contains(Keys.A) || keys.Contains(Keys.Left)) nextX -= Player.Speed;
-            if (keys.Contains(Keys.D) || keys.Contains(Keys.Right)) nextX += Player.Speed;
+            if (keys.Contains(Keys.A) || keys.Contains(Keys.Left)) nextX -= currentSpeed;
+            if (keys.Contains(Keys.D) || keys.Contains(Keys.Right)) nextX += currentSpeed;
 
             RectangleF nextPlayerX = new RectangleF(nextX, Player.Pos.Y, Player.Size.Width, Player.Size.Height);
             bool canMoveX = true;

@@ -9,7 +9,10 @@ namespace LikhoStation
     {
         public PointF Pos;
         public Size Size = new Size(60, 120);
-        public float Speed = 10.0f;
+
+        public float Speed = 6.0f;     // Медленная скорость шага по земле
+        public float AirSpeed = 10.0f; // Быстрая скорость полета в прыжке (для дальности)
+
         public float VelocityY = 0;
         public float JumpPower = -24f;
         public bool IsGrounded = false;

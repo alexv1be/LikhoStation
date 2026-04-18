@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace LikhoStation
 {
-    public enum GameState { MainMenu, Playing, Paused }
+    public enum GameState { MainMenu, Playing, Paused, Cutscene }
 
     public class Player
     {
@@ -48,6 +48,13 @@ namespace LikhoStation
         public bool IsDialogActive = false;
         public int DialogStep = 0;
         public int DialogTimer = 0;
-        public int DialogAlpha = 0; // Прозрачность (0-255)
+        public int DialogAlpha = 0;
+
+        // ПОЛЯ ДЛЯ КАТ-СЦЕН
+        public int CutsceneStep = 0;
+        public int CutsceneTimer = 0;
+        public int CutsceneAlpha = 0;
+        public bool IsFadeOut = false;
+        public float VignetteAlpha = 0f;
     }
 }

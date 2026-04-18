@@ -132,6 +132,8 @@ namespace LikhoStation
             if (sceneName == "Kitchen") LoadKitchen();
             else if (sceneName == "Street") LoadStreet();
             else if (sceneName == "SubwayDescent") LoadSubwayDescent();
+            else if (sceneName == "AbandonedTrain") LoadAbandonedTrain();
+            else if (sceneName == "AbandonedStation") LoadAbandonedStation();
         }
 
         private void LoadKitchen()
@@ -142,13 +144,13 @@ namespace LikhoStation
             CurrentLevel.WorldWidth = screenWidth;
             CurrentLevel.GroundY = screenHeight * 0.97f; // Опустили горизонт
 
-            Player.Size = new Size(130, 480);
+            Player.Size = new Size(200, 550);
             Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
 
             CurrentLevel.Platforms.Clear();
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, CurrentLevel.WorldWidth, screenHeight - CurrentLevel.GroundY));
 
-            CurrentLevel.ItemBag = new RectangleF(630, CurrentLevel.GroundY - 390, 200, 200);
+            CurrentLevel.ItemBag = new RectangleF(630, CurrentLevel.GroundY - 407, 200, 200);
         }
 
         private void LoadStreet()
@@ -157,20 +159,23 @@ namespace LikhoStation
             CurrentLevel.HasKhmar = false;
             CurrentLevel.IsStaticCamera = false;
             CurrentLevel.WorldWidth = 3500;
-            CurrentLevel.GroundY = screenHeight * 0.91f; // Опустили горизонт
+            CurrentLevel.GroundY = screenHeight * 0.91f;
 
-            Player.Size = new Size(110, 240);
+            Player.Size = new Size(80, 220);
             Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
 
             CurrentLevel.Platforms.Clear();
 
-            // Сугроб (меняй координаты X и Y под картинку)
-            CurrentLevel.Platforms.Add(new RectangleF(400, CurrentLevel.GroundY - 150, 200, 150));
+            // Ступенчатый сугроб (4 блока разной высоты, ширина от 400 до 600)
+            CurrentLevel.Platforms.Add(new RectangleF(400, CurrentLevel.GroundY - 40, 40, 40));
+            CurrentLevel.Platforms.Add(new RectangleF(440, CurrentLevel.GroundY - 90, 50, 90));
+            CurrentLevel.Platforms.Add(new RectangleF(490, CurrentLevel.GroundY - 150, 60, 150));
+            CurrentLevel.Platforms.Add(new RectangleF(550, CurrentLevel.GroundY - 80, 50, 80));
 
             // Три куска пола (между ними ямы)
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 1100, screenHeight));
-            CurrentLevel.Platforms.Add(new RectangleF(1400, CurrentLevel.GroundY, 900, screenHeight));
-            CurrentLevel.Platforms.Add(new RectangleF(2600, CurrentLevel.GroundY, 1300, screenHeight));
+            CurrentLevel.Platforms.Add(new RectangleF(1450, CurrentLevel.GroundY, 950, screenHeight));
+            CurrentLevel.Platforms.Add(new RectangleF(2700, CurrentLevel.GroundY, 1400, screenHeight));
 
             CurrentLevel.ForegroundObject = new RectangleF(3200, CurrentLevel.GroundY - 500, 300, 500);
             CurrentLevel.HasForegroundObject = true;
@@ -178,59 +183,125 @@ namespace LikhoStation
 
         private void CheckLevelTriggers()
         {
-            // Как только Яна на Улице доходит до 3000 пикселей - сразу грузим метро
+            // Как только Яна на Улице доходит до 3000 пикселей - сразу грузим супск в метро
             if (CurrentLevel.Name == "Street" && Player.Pos.X >= 3000)
                 LoadSubwayDescent();
+
+            // Запускаем кат-сцену на определенной координате
+            if (CurrentLevel.Name == "SubwayDescent" && Player.Pos.X >= 2800)
+                StartMetroCutscene();
         }
 
         private void LoadSubwayDescent()
         {
             CurrentLevel = new Level { Name = "SubwayDescent" };
-
             CurrentLevel.IsRealWorld = true;
             CurrentLevel.HasKhmar = false;
-            CurrentLevel.IsStaticCamera = false;
             CurrentLevel.FollowY = true;
-            CurrentLevel.WorldWidth = 4000;
+            CurrentLevel.WorldWidth = 3500;
 
-            Player.Size = new Size(80, 160);
+            Player.Size = new Size(180, 495);
 
-            // Начинаем спуск почти под потолком экрана
-            float startY = screenHeight * 0.2f;
-            Player.Pos = new PointF(100, startY - Player.Size.Height);
+            float startY = 1040f;
+
+            Player.Pos = new PointF(300, startY - Player.Size.Height - 50);
 
             CurrentLevel.Platforms.Clear();
-            CurrentLevel.Platforms.Add(new RectangleF(0, startY, 400, screenHeight * 3));
-            GenerateEscalator(startY);
 
-            float bottomY = startY + (40 * 35); // 40 ступенек по 35 пикселей высотой
+            CurrentLevel.Platforms.Add(new RectangleF(0, startY, 1130, 2000));
+
+            int steps = 31;
+            float stepW = 37;
+            float stepH = 49;
+
+            for (int i = 0; i < steps; i++)
+            {
+                float x = 1130 + (i * stepW);
+                float y = startY + (i * stepH);
+                CurrentLevel.Platforms.Add(new RectangleF(x, y, stepW, 2000));
+            }
+
+            float bottomY = startY + (steps * stepH);
             CurrentLevel.GroundY = bottomY;
-            CurrentLevel.Platforms.Add(new RectangleF(400 + (40 * 60), bottomY, 2000, screenHeight * 3));
+
+            CurrentLevel.Platforms.Add(new RectangleF(1130 + (steps * stepW), bottomY, 2000, 2000));
 
             CurrentLevel.MaxCameraOffsetY = bottomY - screenHeight * 0.85f;
             if (CurrentLevel.MaxCameraOffsetY < 0) CurrentLevel.MaxCameraOffsetY = 0;
         }
 
-        private void GenerateEscalator(float startY)
+        private void StartMetroCutscene()
         {
-            int steps = 40;
-            float stepW = 60;
-            float stepH = 35;
+            State = GameState.Cutscene;
+            CurrentLevel.CutsceneStep = 1;
+            CurrentLevel.CutsceneTimer = 0;
+            CurrentLevel.CutsceneAlpha = 0;
+            CurrentLevel.IsFadeOut = false;
+        }
 
-            for (int i = 0; i < steps; i++)
+        private void UpdateCutscene()
+        {
+            CurrentLevel.CutsceneTimer++;
+            int fadeSpeed = (CurrentLevel.CutsceneStep >= 4) ? 20 : 8; // В вагоне переходы быстрее
+            int stayTime = (CurrentLevel.CutsceneStep == 6) ? 450 : 120; // 6 кадр висит долго
+
+            if (!CurrentLevel.IsFadeOut)
             {
-                float x = 400 + (i * stepW);
-                float y = startY + (i * stepH);
-                CurrentLevel.Platforms.Add(new RectangleF(x, y, stepW, screenHeight * 3));
+                CurrentLevel.CutsceneAlpha += fadeSpeed;
+                if (CurrentLevel.CutsceneAlpha >= 255)
+                {
+                    CurrentLevel.CutsceneAlpha = 255;
+                    if (CurrentLevel.CutsceneTimer > stayTime) CurrentLevel.IsFadeOut = true;
+                }
             }
+            else
+            {
+                CurrentLevel.CutsceneAlpha -= fadeSpeed;
+                if (CurrentLevel.CutsceneAlpha <= 0)
+                {
+                    CurrentLevel.CutsceneAlpha = 0;
+                    AdvanceCutsceneStep();
+                }
+            }
+        }
+
+        private void AdvanceCutsceneStep()
+        {
+            CurrentLevel.CutsceneStep++;
+            CurrentLevel.CutsceneTimer = 0;
+            CurrentLevel.IsFadeOut = false;
+
+            if (CurrentLevel.CutsceneStep > 6) LoadScene("AbandonedTrain");
+        }
+
+        private void LoadAbandonedTrain()
+        {
+            State = GameState.Playing;
+            CurrentLevel = new Level { Name = "AbandonedTrain", IsRealWorld = false, HasKhmar = true, WorldWidth = 2500 };
+            Player.Size = new Size(80, 220);
+            CurrentLevel.GroundY = screenHeight * 0.75f;
+            Player.Pos = new PointF(300, CurrentLevel.GroundY - Player.Size.Height);
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 2500, 500));
+        }
+
+        private void LoadAbandonedStation()
+        {
+            State = GameState.Playing;
+            CurrentLevel = new Level { Name = "AbandonedStation", IsRealWorld = false, HasKhmar = true, WorldWidth = 3500 };
+            Player.Size = new Size(110, 240);
+            CurrentLevel.GroundY = screenHeight * 0.8f;
+            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 3500, 500));
         }
 
         // ОБНОВЛЕНИЕ КАДРА
         public void Update(HashSet<Keys> pressedKeys)
         {
+            if (State == GameState.Cutscene) { UpdateCutscene(); return; }
+
             if (State != GameState.Playing) return;
 
-            UpdateDialog(); // Проверяем, не началась ли кат-сцена
+            UpdateDialog();
             CheckLevelTriggers();
             UpdateInput(pressedKeys);
             MovePlayerX(pressedKeys);
@@ -244,7 +315,7 @@ namespace LikhoStation
         {
             if (CurrentLevel.Name != "Kitchen" || CurrentLevel.HasPlayedIntroDialog) return;
 
-            if (Player.Pos.X >= 500 && CurrentLevel.DialogStep == 0)
+            if (Player.Pos.X >= 450 && CurrentLevel.DialogStep == 0)
             {
                 CurrentLevel.DialogStep = 1;
                 CurrentLevel.IsDialogActive = true;
@@ -286,7 +357,7 @@ namespace LikhoStation
 
         private void UpdateInput(HashSet<Keys> keys)
         {
-            // Отключаем чутье художника на кухне
+            // Отключаем чутье художника на кухне (!!добавить еще локи)
             if (CurrentLevel.Name == "Kitchen") Player.IsFocusMode = false;
             else Player.IsFocusMode = keys.Contains(Keys.ShiftKey);
 
@@ -318,17 +389,19 @@ namespace LikhoStation
             RectangleF nextPlayerX = new RectangleF(nextX, Player.Pos.Y, Player.Size.Width, Player.Size.Height);
             bool canMoveX = true;
             foreach (var plat in CurrentLevel.Platforms)
-            {
                 if (nextPlayerX.IntersectsWith(plat)) { canMoveX = false; break; }
-            }
+
             if (canMoveX) Player.Pos.X = nextX;
+
+            if (CurrentLevel.Name == "SubwayDescent" && (Player.Pos.X + Player.Size.Width) >= CurrentLevel.WorldWidth)
+                StartMetroCutscene();
         }
 
         private void MovePlayerY(HashSet<Keys> keys)
         {
             if (CurrentLevel.IsDialogActive) return;
 
-            bool canJump = CurrentLevel.Name != "Kitchen";
+            bool canJump = CurrentLevel.Name != "Kitchen" && CurrentLevel.Name != "SubwayDescent";
             if (keys.Contains(Keys.Space) && Player.IsGrounded && !Player.IsHoldingBreath && canJump)
             {
                 Player.VelocityY = Player.JumpPower;
@@ -361,17 +434,12 @@ namespace LikhoStation
                     if (CurrentLevel.IsBagPickedUp) LoadScene("Street");
                     else Player.Pos.X = CurrentLevel.WorldWidth - Player.Size.Width;
                 }
-                else if (CurrentLevel.Name == "Street")
-                {
-                    LoadScene("SubwayDescent"); // Уходим в метро
-                }
-                else if (CurrentLevel.Name == "SubwayDescent")
-                {
-                    Player.Pos.X = CurrentLevel.WorldWidth - Player.Size.Width; // Тупик до след. этапа
-                }
+                else if (CurrentLevel.Name == "Street") LoadScene("SubwayDescent");
+                else if (CurrentLevel.Name == "SubwayDescent") StartMetroCutscene();
+                else if (CurrentLevel.Name == "AbandonedTrain") LoadScene("AbandonedStation");
+                else Player.Pos.X = CurrentLevel.WorldWidth - Player.Size.Width;
             }
 
-            // Увеличили зону смерти, чтобы на глубоких уровнях Яна не умирала
             if (Player.Pos.Y > CurrentLevel.GroundY + 1000) LoadScene(CurrentLevel.Name);
         }
 
@@ -402,12 +470,11 @@ namespace LikhoStation
                 if (CameraOffsetX < 0) CameraOffsetX = 0;
                 if (CameraOffsetX > CurrentLevel.WorldWidth - screenWidth) CameraOffsetX = CurrentLevel.WorldWidth - screenWidth;
 
-                // Слежение по оси Y (для эскалатора)
                 if (CurrentLevel.FollowY)
                 {
-                    CameraOffsetY = Player.Pos.Y - screenHeight * 0.5f; // Яна всегда по центру высоты во время спуска
-                    if (CameraOffsetY < 0) CameraOffsetY = 0;
-                    if (CameraOffsetY > CurrentLevel.MaxCameraOffsetY) CameraOffsetY = CurrentLevel.MaxCameraOffsetY; // Останавливаемся у пола станции
+                    CameraOffsetY = Player.Pos.Y - screenHeight * 0.5f;
+                    if (CameraOffsetY < 0) CameraOffsetY = 0;   
+                    if (CameraOffsetY > CurrentLevel.MaxCameraOffsetY) CameraOffsetY = CurrentLevel.MaxCameraOffsetY;
                 }
                 else
                 {

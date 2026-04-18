@@ -16,6 +16,9 @@ namespace LikhoStation
         private Image bagImg;
         private Image streetBg;
         private Image dialog1, dialog2, dialog3;
+        private Image subwayBg;
+        private Image subwayFg;
+        private Image[] cutsceneImages = new Image[6];
 
         private PrivateFontCollection customFonts = new PrivateFontCollection();
         private FontFamily pixelFont;
@@ -25,23 +28,31 @@ namespace LikhoStation
             if (File.Exists(@"images\menu.png")) menuBg = Image.FromFile(@"images\menu.png");
             if (File.Exists(@"images\kitchen.png")) kitchenBg = Image.FromFile(@"images\kitchen.png");
             if (File.Exists(@"images\bag.png")) bagImg = Image.FromFile(@"images\bag.png");
-            if (File.Exists(@"images\street_bg.png")) streetBg = Image.FromFile(@"images\street_bg.png");
-
             if (File.Exists(@"images\dialogue_kitchen_grandma_1.png")) dialog1 = Image.FromFile(@"images\dialogue_kitchen_grandma_1.png");
             if (File.Exists(@"images\dialogue_kitchen_yana_1.png")) dialog2 = Image.FromFile(@"images\dialogue_kitchen_yana_1.png");
             if (File.Exists(@"images\dialogue_kitchen_grandma_2.png")) dialog3 = Image.FromFile(@"images\dialogue_kitchen_grandma_2.png");
-
+            if (File.Exists(@"images\street_bg.png")) streetBg = Image.FromFile(@"images\street_bg.png");
+            if (File.Exists(@"images\subway_bg.png")) subwayBg = Image.FromFile(@"images\subway_bg.png");
+            if (File.Exists(@"images\subway_fg.png")) subwayFg = Image.FromFile(@"images\subway_fg.png");
             if (File.Exists(@"images\LCD40x2Display-Regular.otf"))
             {
                 customFonts.AddFontFile(@"images\LCD40x2Display-Regular.otf");
                 pixelFont = customFonts.Families[0];
             }
             else pixelFont = new FontFamily("Courier New");
+
+            for (int i = 0; i < 6; i++)
+            {
+                string path = $@"images\cutscene_{i + 1}.png";
+                if (File.Exists(path)) cutsceneImages[i] = Image.FromFile(path);
+            }
         }
 
         public void Draw(Graphics g, GameController engine, int screenWidth, int screenHeight)
         {
             if (engine.State == GameState.MainMenu) { DrawMainMenu(g, engine, screenWidth, screenHeight); return; }
+
+            if (engine.State == GameState.Cutscene) { DrawCutscene(g, engine.CurrentLevel, screenWidth, screenHeight); return; }
 
             blinkCounter++;
             g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
@@ -138,11 +149,14 @@ namespace LikhoStation
             }
             else if (level.Name == "Street")
             {
-                // Добавлено -engine.CameraOffsetX по координате X
                 if (streetBg != null) g.DrawImage(streetBg, -engine.CameraOffsetX, 0, level.WorldWidth, h);
                 else g.Clear(Color.FromArgb(20, 25, 35));
             }
-            else if (level.Name == "SubwayDescent") g.Clear(Color.FromArgb(30, 30, 35));
+            else if (level.Name == "SubwayDescent")
+            {
+                if (subwayBg != null) g.DrawImage(subwayBg, -engine.CameraOffsetX, -engine.CameraOffsetY, level.WorldWidth, 2700);
+                else g.Clear(Color.FromArgb(30, 30, 35));
+            }
         }
 
         private void DrawGeometry(Graphics g, GameController engine)
@@ -150,15 +164,17 @@ namespace LikhoStation
             Level level = engine.CurrentLevel;
             foreach (var plat in level.Platforms)
             {
-                if (engine.Player.IsFocusMode) g.DrawRectangle(new Pen(Color.FromArgb(50, 255, 255, 255), 2), plat.X, plat.Y, plat.Width, plat.Height);
-                else if (level.Name == "SubwayDescent") g.FillRectangle(new SolidBrush(Color.FromArgb(40, 40, 45)), plat);
-                else if (level.Name != "Kitchen" && level.Name != "Street") g.FillRectangle(Brushes.Gray, plat);
+                // Если включено чутьё - рисуем контуры
+                if (engine.Player.IsFocusMode)
+                    g.DrawRectangle(new Pen(Color.FromArgb(50, 255, 255, 255), 2), plat.X, plat.Y, plat.Width, plat.Height);
+                else if (level.Name != "Kitchen" && level.Name != "Street" && level.Name != "SubwayDescent")
+                    g.FillRectangle(Brushes.Gray, plat);
             }
 
             if (level.Name == "Kitchen" && !level.IsBagPickedUp)
             {
                 if (bagImg != null) g.DrawImage(bagImg, level.ItemBag);
-                else g.FillRectangle(Brushes.SaddleBrown, level.ItemBag); // Запасной вариант
+                else g.FillRectangle(Brushes.SaddleBrown, level.ItemBag);
 
                 if (engine.Player.IsFocusMode) g.DrawRectangle(new Pen(Color.Yellow, 4), level.ItemBag.X, level.ItemBag.Y, level.ItemBag.Width, level.ItemBag.Height);
             }
@@ -169,10 +185,16 @@ namespace LikhoStation
             Level level = engine.CurrentLevel;
             Player p = engine.Player;
 
+            // Сначала рисуем саму Яну
             Brush pBrush = p.IsExhausted ? ((blinkCounter % 16 < 8) ? Brushes.Red : Brushes.White) : (p.IsHoldingBreath ? Brushes.MediumPurple : Brushes.DarkRed);
-
             g.FillRectangle(level.IsRealWorld ? Brushes.DarkRed : pBrush, p.Pos.X, p.Pos.Y, p.Size.Width, p.Size.Height);
 
+            // Затем поверх Яны рисуем передний план (перила эскалатора)
+            if (level.Name == "SubwayDescent" && subwayFg != null && !p.IsFocusMode)
+            {
+                // Используем ту же высоту 2700, что и для заднего фона, чтобы они идеально совпали
+                g.DrawImage(subwayFg, 0, 0, level.WorldWidth, 2700);
+            }
         }
 
         private void DrawKhmar(Graphics g, Player p, float camX, float camY, int width, int height)
@@ -219,8 +241,8 @@ namespace LikhoStation
             string text = p.IsExhausted ? "ОДЫШКА!" : "ДЫХАНИЕ (Удерживай C)";
 
             DrawOutlineText(g, text, new Font(pixelFont, 8), textBrush, 40, 80);
-            g.DrawRectangle(Pens.White, 40, 100, 200, 15);
-            g.FillRectangle(p.IsExhausted ? Brushes.Red : Brushes.LightSkyBlue, 41, 101, (p.Oxygen / p.MaxOxygen) * 198, 13);
+            g.DrawRectangle(Pens.White, 40, 120, 200, 15);
+            g.FillRectangle(p.IsExhausted ? Brushes.Red : Brushes.LightSkyBlue, 41, 121, (p.Oxygen / p.MaxOxygen) * 198, 13);
         }
 
         private void DrawDialogUI(Graphics g, Level level, Player p, int w, int h)
@@ -251,18 +273,62 @@ namespace LikhoStation
         {
             int posX, posY;
 
-            if (level.DialogStep == 2) // Окно Яны (над головой)
+            if (level.DialogStep == 2)
             {
                 posX = (int)p.Pos.X + 80 + (p.Size.Width / 4) - (drawW / 4);
                 posY = (int)p.Pos.Y - drawH - 0;
             }
-            else // Окно Бабушки (возле кресла справа)
+            else
             {
                 posX = 1500 - (drawW / 2);
                 posY = 600 - drawH;
             }
 
             return new Rectangle(posX, posY, drawW, drawH);
+        }
+
+        private void DrawCutscene(Graphics g, Level level, int w, int h)
+        {
+            g.Clear(Color.Black); // Фон всегда черный
+            int idx = level.CutsceneStep - 1;
+
+            if (idx >= 0 && idx < 6)
+            {
+                if (cutsceneImages[idx] != null)
+                {
+                    // Рисуем картинку во весь экран с нужной прозрачностью
+                    DrawImageWithAlpha(g, cutsceneImages[idx], new Rectangle(0, 0, w, h), level.CutsceneAlpha);
+                }
+                else DrawCutscenePlaceholder(g, level.CutsceneStep, level.CutsceneAlpha, w, h);
+            }
+
+            // На 6 кадре рисуем наползающую хмарь (виньетку)
+            if (level.CutsceneStep == 6 && level.VignetteAlpha > 0)
+                DrawVignette(g, w, h, (int)level.VignetteAlpha);
+        }
+
+        private void DrawCutscenePlaceholder(Graphics g, int step, int alpha, int w, int h)
+        {
+            using (Brush b = new SolidBrush(Color.FromArgb(alpha, 40, 40, 45)))
+                g.FillRectangle(b, 0, 0, w, h);
+
+            string text = $"КАДР {step} (это cutscene_{step}.png)";
+            DrawOutlineText(g, text, new Font(pixelFont, 15), Brushes.White, w / 2 - 500, h / 2);
+        }
+
+        private void DrawVignette(Graphics g, int w, int h, int alpha)
+        {
+            using (GraphicsPath path = new GraphicsPath())
+            {
+                // Делаем овал чуть больше экрана
+                path.AddEllipse(-w / 4, -h / 4, w * 1.5f, h * 1.5f);
+                using (PathGradientBrush pgb = new PathGradientBrush(path))
+                {
+                    pgb.CenterColor = Color.FromArgb(0, 0, 0, 0); // В центре прозрачно
+                    pgb.SurroundColors = new[] { Color.FromArgb(alpha, 0, 0, 0) }; // По краям чернота
+                    g.FillRectangle(pgb, 0, 0, w, h);
+                }
+            }
         }
     }
 }

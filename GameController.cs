@@ -11,7 +11,7 @@ namespace LikhoStation
         public Player Player { get; private set; }
         public Level CurrentLevel { get; private set; }
         public float CameraOffsetX { get; private set; }
-        public float CameraOffsetY { get; private set; } // Новая ось камеры
+        public float CameraOffsetY { get; private set; }
 
         // МЕНЮ И СОСТОЯНИЯ
         public GameState State { get; private set; } = GameState.MainMenu;

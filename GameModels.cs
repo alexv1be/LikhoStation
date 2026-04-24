@@ -10,7 +10,7 @@ namespace LikhoStation
         public PointF Pos;
         public Size Size = new Size(60, 120);
 
-        public float Speed = 6.0f;     // Медленная скорость шага по земле
+        public float Speed = 8.0f;     // Медленная скорость шага по земле
         public float AirSpeed = 10.0f; // Быстрая скорость полета в прыжке (для дальности)
 
         public float VelocityY = 0;
@@ -21,6 +21,12 @@ namespace LikhoStation
         public bool IsHoldingBreath = false;
         public bool IsExhausted = false;
         public bool IsFocusMode = false;
+
+        // АНИМАЦИЯ
+        public bool FacingRight = true;
+        public bool IsMoving = false;
+        public int WalkFrame = 0;
+        public int WalkTimer = 0;
     }
 
     public class Level

@@ -20,6 +20,12 @@ namespace LikhoStation
         private Image subwayFg;
         private Image[] cutsceneImages = new Image[6];
 
+        private Image yanaHoodieIdle;
+        private List<Image> yanaHoodieWalk = new List<Image>();
+
+        private Image yanaCoatIdle;
+        private List<Image> yanaCoatWalk = new List<Image>();
+
         private PrivateFontCollection customFonts = new PrivateFontCollection();
         private FontFamily pixelFont;
 
@@ -34,6 +40,14 @@ namespace LikhoStation
             if (File.Exists(@"images\street_bg.png")) streetBg = Image.FromFile(@"images\street_bg.png");
             if (File.Exists(@"images\subway_bg.png")) subwayBg = Image.FromFile(@"images\subway_bg.png");
             if (File.Exists(@"images\subway_fg.png")) subwayFg = Image.FromFile(@"images\subway_fg.png");
+
+            var p = @"images\";
+            if (File.Exists(p + "yana_hoodie_idle.png")) yanaHoodieIdle = Image.FromFile(p + "yana_hoodie_idle.png");
+            if (File.Exists(p + "yana_hoodie_w1.png")) yanaHoodieWalk.Add(Image.FromFile(p + "yana_hoodie_w1.png"));
+            if (File.Exists(p + "yana_hoodie_w2.png")) yanaHoodieWalk.Add(Image.FromFile(p + "yana_hoodie_w2.png"));
+            if (File.Exists(p + "yana_coat_idle.png")) yanaCoatIdle = Image.FromFile(p + "yana_coat_idle.png");
+            if (File.Exists(p + "yana_coat_w1.png")) yanaCoatWalk.Add(Image.FromFile(p + "yana_coat_w1.png"));
+            if (File.Exists(p + "yana_coat_w2.png")) yanaCoatWalk.Add(Image.FromFile(p + "yana_coat_w2.png"));
             if (File.Exists(@"images\LCD40x2Display-Regular.otf"))
             {
                 customFonts.AddFontFile(@"images\LCD40x2Display-Regular.otf");
@@ -184,17 +198,39 @@ namespace LikhoStation
         {
             Level level = engine.CurrentLevel;
             Player p = engine.Player;
+            bool isK = level.Name == "Kitchen";
+            Image idleImg = isK ? yanaHoodieIdle : yanaCoatIdle;
+            Image s = idleImg;
 
-            // Сначала рисуем саму Яну
-            Brush pBrush = p.IsExhausted ? ((blinkCounter % 16 < 8) ? Brushes.Red : Brushes.White) : (p.IsHoldingBreath ? Brushes.MediumPurple : Brushes.DarkRed);
-            g.FillRectangle(level.IsRealWorld ? Brushes.DarkRed : pBrush, p.Pos.X, p.Pos.Y, p.Size.Width, p.Size.Height);
-
-            // Затем поверх Яны рисуем передний план (перила эскалатора)
-            if (level.Name == "SubwayDescent" && subwayFg != null && !p.IsFocusMode)
+            if (!p.IsGrounded && !isK) // Если в прыжке (и это не кухня)
             {
-                // Используем ту же высоту 2700, что и для заднего фона, чтобы они идеально совпали
-                g.DrawImage(subwayFg, 0, 0, level.WorldWidth, 2700);
+                // Используем yana_coat_w2.png (это второй элемент в списке walk)
+                if (yanaCoatWalk.Count > 1) s = yanaCoatWalk[1];
             }
+            else if (p.IsMoving && p.IsGrounded)
+            {
+                var walkList = isK ? yanaHoodieWalk : yanaCoatWalk;
+                if (p.WalkFrame == 0 && walkList.Count > 0) s = walkList[0];
+                else if (p.WalkFrame == 2 && walkList.Count > 1) s = walkList[1];
+            }
+
+            if (s != null) DrawEntitySprite(g, s, p); // Вынес отрисовку в отдельный метод для чистоты
+
+            if (level.Name == "SubwayDescent" && subwayFg != null && !p.IsFocusMode)
+                g.DrawImage(subwayFg, 0, 0, level.WorldWidth, 2700);
+        }
+
+        private void DrawEntitySprite(Graphics g, Image s, Player p)
+        {
+            if (!p.FacingRight)
+            {
+                g.TranslateTransform(p.Pos.X * 2 + p.Size.Width, 0);
+                g.ScaleTransform(-1, 1);
+            }
+
+            g.DrawImage(s, p.Pos.X, p.Pos.Y, p.Size.Width, p.Size.Height);
+
+            if (!p.FacingRight) g.ResetTransform();
         }
 
         private void DrawKhmar(Graphics g, Player p, float camX, float camY, int width, int height)

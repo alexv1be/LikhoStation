@@ -92,7 +92,7 @@ namespace LikhoStation
         // СОХРАНЕНИЕ И ЗАГРУЗКА
         private void SaveGame()
         {
-            string data = $"{CurrentLevel.Name},{CurrentLevel.IsBagPickedUp}";
+            var data = $"{CurrentLevel.Name},{CurrentLevel.IsBagPickedUp}";
             File.WriteAllText(saveFilePath, data);
             HasSaveFile = true;
         }
@@ -101,12 +101,12 @@ namespace LikhoStation
         {
             if (File.Exists(saveFilePath))
             {
-                string[] data = File.ReadAllText(saveFilePath).Split(',');
+                var data = File.ReadAllText(saveFilePath).Split(',');
 
                 if (data.Length >= 2)
                 {
-                    string savedScene = data[0];
-                    bool isBagPickedUp = bool.Parse(data[1]);
+                    var savedScene = data[0];
+                    var isBagPickedUp = bool.Parse(data[1]);
 
                     LoadScene(savedScene);
                     CurrentLevel.IsBagPickedUp = isBagPickedUp;
@@ -142,9 +142,10 @@ namespace LikhoStation
             CurrentLevel.HasKhmar = false;
             CurrentLevel.IsStaticCamera = true;
             CurrentLevel.WorldWidth = screenWidth;
-            CurrentLevel.GroundY = screenHeight * 0.97f; // Опустили горизонт
+            CurrentLevel.GroundY = screenHeight * 0.97f;
 
-            Player.Size = new Size(200, 550);
+            Player.Speed = 10.0f;
+            Player.Size = new Size(325, 650);
             Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
 
             CurrentLevel.Platforms.Clear();
@@ -161,7 +162,7 @@ namespace LikhoStation
             CurrentLevel.WorldWidth = 3500;
             CurrentLevel.GroundY = screenHeight * 0.91f;
 
-            Player.Size = new Size(80, 220);
+            Player.Size = new Size(125, 250);
             Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
 
             CurrentLevel.Platforms.Clear();
@@ -200,9 +201,10 @@ namespace LikhoStation
             CurrentLevel.FollowY = true;
             CurrentLevel.WorldWidth = 3500;
 
-            Player.Size = new Size(180, 495);
+            Player.Speed = 10.0f;
+            Player.Size = new Size(250, 500);
 
-            float startY = 1040f;
+            var startY = 1040f;
 
             Player.Pos = new PointF(300, startY - Player.Size.Height - 50);
 
@@ -210,18 +212,18 @@ namespace LikhoStation
 
             CurrentLevel.Platforms.Add(new RectangleF(0, startY, 1130, 2000));
 
-            int steps = 31;
-            float stepW = 37;
-            float stepH = 49;
+            var steps = 31;
+            var stepW = 37;
+            var stepH = 49;
 
             for (int i = 0; i < steps; i++)
             {
-                float x = 1130 + (i * stepW);
-                float y = startY + (i * stepH);
+                var x = 1130 + (i * stepW);
+                var y = startY + (i * stepH);
                 CurrentLevel.Platforms.Add(new RectangleF(x, y, stepW, 2000));
             }
 
-            float bottomY = startY + (steps * stepH);
+            var bottomY = startY + (steps * stepH);
             CurrentLevel.GroundY = bottomY;
 
             CurrentLevel.Platforms.Add(new RectangleF(1130 + (steps * stepW), bottomY, 2000, 2000));
@@ -242,8 +244,8 @@ namespace LikhoStation
         private void UpdateCutscene()
         {
             CurrentLevel.CutsceneTimer++;
-            int fadeSpeed = (CurrentLevel.CutsceneStep >= 4) ? 20 : 8; // В вагоне переходы быстрее
-            int stayTime = (CurrentLevel.CutsceneStep == 6) ? 450 : 120; // 6 кадр висит долго
+            var fadeSpeed = (CurrentLevel.CutsceneStep >= 4) ? 20 : 8; // В вагоне переходы быстрее
+            var stayTime = (CurrentLevel.CutsceneStep == 6) ? 450 : 120; // 6 кадр висит долго
 
             if (!CurrentLevel.IsFadeOut)
             {
@@ -278,7 +280,7 @@ namespace LikhoStation
         {
             State = GameState.Playing;
             CurrentLevel = new Level { Name = "AbandonedTrain", IsRealWorld = false, HasKhmar = true, WorldWidth = 2500 };
-            Player.Size = new Size(80, 220);
+            Player.Size = new Size(110, 220);
             CurrentLevel.GroundY = screenHeight * 0.75f;
             Player.Pos = new PointF(300, CurrentLevel.GroundY - Player.Size.Height);
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 2500, 500));
@@ -309,13 +311,14 @@ namespace LikhoStation
             CheckBoundaries();
             UpdateItems(pressedKeys);
             UpdateCamera();
+            UpdateAnimation();
         }
 
         private void UpdateDialog()
         {
             if (CurrentLevel.Name != "Kitchen" || CurrentLevel.HasPlayedIntroDialog) return;
 
-            if (Player.Pos.X >= 450 && CurrentLevel.DialogStep == 0)
+            if (Player.Pos.X >= 400 && CurrentLevel.DialogStep == 0)
             {
                 CurrentLevel.DialogStep = 1;
                 CurrentLevel.IsDialogActive = true;
@@ -327,8 +330,8 @@ namespace LikhoStation
         private void ProcessDialogState()
         {
             CurrentLevel.DialogTimer++;
-            int t = CurrentLevel.DialogTimer;
-            int limit = (CurrentLevel.DialogStep == 2) ? 80 : 110;
+            var t = CurrentLevel.DialogTimer;
+            var limit = (CurrentLevel.DialogStep == 2) ? 80 : 110;
 
             if (t <= 15) CurrentLevel.DialogAlpha = t * 17;
             else if (t >= (limit - 15) && t <= limit) CurrentLevel.DialogAlpha = (limit - t) * 17;
@@ -376,23 +379,39 @@ namespace LikhoStation
             }
         }
 
+        private void UpdateAnimation()
+        {
+            // Если диалог активен — Яна всегда стоит
+            if (CurrentLevel.IsDialogActive)
+            {
+                Player.IsMoving = false;
+                Player.WalkFrame = 0;
+                return;
+            }
+
+            if (Player.IsMoving && Player.IsGrounded)
+                Player.WalkFrame = (int)((DateTime.Now.TimeOfDay.TotalMilliseconds / 300) % 4); // СКОРОСТЬ ШАГА
+            else
+                Player.WalkFrame = 0;
+        }
+
         private void MovePlayerX(HashSet<Keys> keys)
         {
+            Player.IsMoving = false;
+
             if (Player.IsHoldingBreath || CurrentLevel.IsDialogActive) return;
+            var currentSpeed = Player.IsGrounded ? Player.Speed : Player.AirSpeed;
+            var nextX = Player.Pos.X;
 
-            float currentSpeed = Player.IsGrounded ? Player.Speed : Player.AirSpeed;
-
-            float nextX = Player.Pos.X;
-            if (keys.Contains(Keys.A) || keys.Contains(Keys.Left)) nextX -= currentSpeed;
-            if (keys.Contains(Keys.D) || keys.Contains(Keys.Right)) nextX += currentSpeed;
+            if (keys.Contains(Keys.A) || keys.Contains(Keys.Left)) { nextX -= currentSpeed; Player.FacingRight = false; Player.IsMoving = true; }
+            if (keys.Contains(Keys.D) || keys.Contains(Keys.Right)) { nextX += currentSpeed; Player.FacingRight = true; Player.IsMoving = true; }
 
             RectangleF nextPlayerX = new RectangleF(nextX, Player.Pos.Y, Player.Size.Width, Player.Size.Height);
-            bool canMoveX = true;
+            var canMoveX = true;
             foreach (var plat in CurrentLevel.Platforms)
                 if (nextPlayerX.IntersectsWith(plat)) { canMoveX = false; break; }
 
             if (canMoveX) Player.Pos.X = nextX;
-
             if (CurrentLevel.Name == "SubwayDescent" && (Player.Pos.X + Player.Size.Width) >= CurrentLevel.WorldWidth)
                 StartMetroCutscene();
         }
@@ -401,16 +420,18 @@ namespace LikhoStation
         {
             if (CurrentLevel.IsDialogActive) return;
 
-            bool canJump = CurrentLevel.Name != "Kitchen" && CurrentLevel.Name != "SubwayDescent";
+            var canJump = CurrentLevel.Name != "Kitchen" && CurrentLevel.Name != "SubwayDescent";
             if (keys.Contains(Keys.Space) && Player.IsGrounded && !Player.IsHoldingBreath && canJump)
             {
                 Player.VelocityY = Player.JumpPower;
                 Player.IsGrounded = false;
             }
 
-            float nextY = Player.Pos.Y + Player.VelocityY;
-            RectangleF nextPlayerY = new RectangleF(Player.Pos.X, nextY, Player.Size.Width, Player.Size.Height);
-            bool hitGround = false;
+            Player.VelocityY += gravity;
+
+            var nextY = Player.Pos.Y + Player.VelocityY;
+            var nextPlayerY = new RectangleF(Player.Pos.X, nextY, Player.Size.Width, Player.Size.Height);
+            var hitGround = false;
 
             foreach (var plat in CurrentLevel.Platforms)
             {
@@ -420,7 +441,7 @@ namespace LikhoStation
                     else if (Player.VelocityY < 0) { Player.Pos.Y = plat.Bottom; Player.VelocityY = 0; hitGround = true; break; }
                 }
             }
-            if (!hitGround) { Player.Pos.Y = nextY; Player.VelocityY += gravity; Player.IsGrounded = false; }
+            if (!hitGround) { Player.Pos.Y = nextY; Player.IsGrounded = false; }
         }
 
         private void CheckBoundaries()

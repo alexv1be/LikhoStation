@@ -11,22 +11,38 @@ namespace LikhoStation
         private GameRenderer renderer;
         private HashSet<Keys> pressedKeys = new HashSet<Keys>();
         private System.Windows.Forms.Timer gameTimer = new System.Windows.Forms.Timer();
+        private AxWMPLib.AxWindowsMediaPlayer videoPlayer;
 
         public Form1()
         {
             InitializeComponent();
+
+            videoPlayer = new AxWMPLib.AxWindowsMediaPlayer();
+            ((System.ComponentModel.ISupportInitialize)(this.videoPlayer)).BeginInit();
+            this.Controls.Add(videoPlayer);
+            videoPlayer.TabStop = false;
+            videoPlayer.Enter += (s, e) => this.Focus();
+            videoPlayer.Dock = DockStyle.Fill;
+            videoPlayer.Visible = false;
+            ((System.ComponentModel.ISupportInitialize)(this.videoPlayer)).EndInit();
+           
             this.DoubleBuffered = true;
             this.WindowState = FormWindowState.Maximized;
             this.Text = "Станция Лихо";
 
-            // Ждем загрузки формы, чтобы получить точные размеры экрана на весь монитор
-            this.Load += Form1_Load;
+            this.Shown += Form1_Shown;
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void Form1_Shown(object sender, EventArgs e)
         {
+            Cursor.Hide();
+
             engine = new GameController(this.ClientSize.Width, this.ClientSize.Height);
             renderer = new GameRenderer();
+
+            engine.OnPlayVideo = PlayCutsceneVideo;
+            videoPlayer.uiMode = "none";
+            videoPlayer.PlayStateChange += VideoPlayer_PlayStateChange;
 
             gameTimer.Interval = 20;
             gameTimer.Tick += GameTimer_Tick;
@@ -35,11 +51,8 @@ namespace LikhoStation
 
         private void GameTimer_Tick(object sender, EventArgs e)
         {
-            // Если в контроллере выбрали "Выход" - закрываем приложение
             if (engine.ShouldExit)
-            {
                 Application.Exit();
-            }
 
             engine.Update(pressedKeys);
             Invalidate();
@@ -63,6 +76,28 @@ namespace LikhoStation
         protected override void OnKeyUp(KeyEventArgs e)
         {
             if (pressedKeys.Contains(e.KeyCode)) pressedKeys.Remove(e.KeyCode);
+        }
+
+        private void PlayCutsceneVideo(string path)
+        {
+            videoPlayer.Dock = DockStyle.None;
+            videoPlayer.Location = new Point(0, 0);
+            videoPlayer.Size = this.ClientSize;
+            videoPlayer.stretchToFit = true;
+
+            videoPlayer.URL = path;
+            videoPlayer.Visible = true;
+            videoPlayer.Ctlcontrols.play();
+        }
+
+        private void VideoPlayer_PlayStateChange(object sender, AxWMPLib._WMPOCXEvents_PlayStateChangeEvent e)
+        {
+            // 8 — это код состояния "MediaEnded" (Видео закончилось)
+            if (e.newState == 8)
+            {
+                videoPlayer.Visible = false;
+                engine.EndVideoCutscene();
+            }
         }
     }
 }

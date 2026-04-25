@@ -12,6 +12,7 @@ namespace LikhoStation
         public Level CurrentLevel { get; private set; }
         public float CameraOffsetX { get; private set; }
         public float CameraOffsetY { get; private set; }
+        public Action<string> OnPlayVideo;
 
         // МЕНЮ И СОСТОЯНИЯ
         public GameState State { get; private set; } = GameState.MainMenu;
@@ -72,19 +73,20 @@ namespace LikhoStation
             if (key == Keys.Up || key == Keys.W) MenuIndex--;
             if (key == Keys.Down || key == Keys.S) MenuIndex++;
 
-            if (MenuIndex < 0) MenuIndex = 2;
-            if (MenuIndex > 2) MenuIndex = 0;
+            if (MenuIndex < 0) MenuIndex = 3;
+            if (MenuIndex > 3) MenuIndex = 0;
 
             if (key == Keys.Enter)
             {
                 if (MenuIndex == 0) State = GameState.Playing;
-                else if (MenuIndex == 1)
+                else if (MenuIndex == 1) SaveGame();
+                else if (MenuIndex == 2)
                 {
                     SaveGame();
                     State = GameState.MainMenu;
                     MenuIndex = 0;
                 }
-                else if (MenuIndex == 2) ShouldExit = true;
+                else if (MenuIndex == 3) ShouldExit = true;
             }
             else if (key == Keys.Escape) State = GameState.Playing;
         }
@@ -92,7 +94,7 @@ namespace LikhoStation
         // СОХРАНЕНИЕ И ЗАГРУЗКА
         private void SaveGame()
         {
-            var data = $"{CurrentLevel.Name},{CurrentLevel.IsBagPickedUp}";
+            var data = $"{CurrentLevel.Name}|{CurrentLevel.IsBagPickedUp}|{Player.Pos.X}|{Player.Pos.Y}";
             File.WriteAllText(saveFilePath, data);
             HasSaveFile = true;
         }
@@ -101,7 +103,7 @@ namespace LikhoStation
         {
             if (File.Exists(saveFilePath))
             {
-                var data = File.ReadAllText(saveFilePath).Split(',');
+                var data = File.ReadAllText(saveFilePath).Split('|');
 
                 if (data.Length >= 2)
                 {
@@ -110,6 +112,14 @@ namespace LikhoStation
 
                     LoadScene(savedScene);
                     CurrentLevel.IsBagPickedUp = isBagPickedUp;
+
+                    if (data.Length >= 4)
+                    {
+                        var savedX = float.Parse(data[2]);
+                        var savedY = float.Parse(data[3]);
+                        Player.Pos = new PointF(savedX, savedY);
+                    }
+
                     State = GameState.Playing;
                 }
             }
@@ -184,11 +194,9 @@ namespace LikhoStation
 
         private void CheckLevelTriggers()
         {
-            // Как только Яна на Улице доходит до 3000 пикселей - сразу грузим супск в метро
             if (CurrentLevel.Name == "Street" && Player.Pos.X >= 3000)
                 LoadSubwayDescent();
 
-            // Запускаем кат-сцену на определенной координате
             if (CurrentLevel.Name == "SubwayDescent" && Player.Pos.X >= 2800)
                 StartMetroCutscene();
         }
@@ -234,46 +242,15 @@ namespace LikhoStation
 
         private void StartMetroCutscene()
         {
-            State = GameState.Cutscene;
-            CurrentLevel.CutsceneStep = 1;
-            CurrentLevel.CutsceneTimer = 0;
-            CurrentLevel.CutsceneAlpha = 0;
-            CurrentLevel.IsFadeOut = false;
+            State = GameState.VideoPlaying;
+
+            OnPlayVideo?.Invoke(@"Assets\Video\metro_cutscene.mp4");
         }
 
-        private void UpdateCutscene()
+        public void EndVideoCutscene()
         {
-            CurrentLevel.CutsceneTimer++;
-            var fadeSpeed = (CurrentLevel.CutsceneStep >= 4) ? 20 : 8; // В вагоне переходы быстрее
-            var stayTime = (CurrentLevel.CutsceneStep == 6) ? 450 : 120; // 6 кадр висит долго
-
-            if (!CurrentLevel.IsFadeOut)
-            {
-                CurrentLevel.CutsceneAlpha += fadeSpeed;
-                if (CurrentLevel.CutsceneAlpha >= 255)
-                {
-                    CurrentLevel.CutsceneAlpha = 255;
-                    if (CurrentLevel.CutsceneTimer > stayTime) CurrentLevel.IsFadeOut = true;
-                }
-            }
-            else
-            {
-                CurrentLevel.CutsceneAlpha -= fadeSpeed;
-                if (CurrentLevel.CutsceneAlpha <= 0)
-                {
-                    CurrentLevel.CutsceneAlpha = 0;
-                    AdvanceCutsceneStep();
-                }
-            }
-        }
-
-        private void AdvanceCutsceneStep()
-        {
-            CurrentLevel.CutsceneStep++;
-            CurrentLevel.CutsceneTimer = 0;
-            CurrentLevel.IsFadeOut = false;
-
-            if (CurrentLevel.CutsceneStep > 6) LoadScene("AbandonedTrain");
+            State = GameState.Playing;
+            LoadScene("AbandonedTrain");
         }
 
         private void LoadAbandonedTrain()
@@ -299,8 +276,6 @@ namespace LikhoStation
         // ОБНОВЛЕНИЕ КАДРА
         public void Update(HashSet<Keys> pressedKeys)
         {
-            if (State == GameState.Cutscene) { UpdateCutscene(); return; }
-
             if (State != GameState.Playing) return;
 
             UpdateDialog();
@@ -331,7 +306,7 @@ namespace LikhoStation
         {
             CurrentLevel.DialogTimer++;
             var t = CurrentLevel.DialogTimer;
-            var limit = (CurrentLevel.DialogStep == 2) ? 80 : 110;
+            var limit = (CurrentLevel.DialogStep == 2) ? 70 : 90;
 
             if (t <= 15) CurrentLevel.DialogAlpha = t * 17;
             else if (t >= (limit - 15) && t <= limit) CurrentLevel.DialogAlpha = (limit - t) * 17;
@@ -381,7 +356,6 @@ namespace LikhoStation
 
         private void UpdateAnimation()
         {
-            // Если диалог активен — Яна всегда стоит
             if (CurrentLevel.IsDialogActive)
             {
                 Player.IsMoving = false;
@@ -390,7 +364,11 @@ namespace LikhoStation
             }
 
             if (Player.IsMoving && Player.IsGrounded)
-                Player.WalkFrame = (int)((DateTime.Now.TimeOfDay.TotalMilliseconds / 300) % 4); // СКОРОСТЬ ШАГА
+            {
+                // Если задерживает дыхание, анимация станет в 2 раза медленнее
+                var animSpeed = Player.IsHoldingBreath ? 600 : 300;
+                Player.WalkFrame = (int)((DateTime.Now.TimeOfDay.TotalMilliseconds / animSpeed) % 4);
+            }
             else
                 Player.WalkFrame = 0;
         }
@@ -399,14 +377,15 @@ namespace LikhoStation
         {
             Player.IsMoving = false;
 
-            if (Player.IsHoldingBreath || CurrentLevel.IsDialogActive) return;
+            if (CurrentLevel.IsDialogActive) return;
             var currentSpeed = Player.IsGrounded ? Player.Speed : Player.AirSpeed;
+            if (Player.IsHoldingBreath) currentSpeed /= 3.0f;
             var nextX = Player.Pos.X;
 
             if (keys.Contains(Keys.A) || keys.Contains(Keys.Left)) { nextX -= currentSpeed; Player.FacingRight = false; Player.IsMoving = true; }
             if (keys.Contains(Keys.D) || keys.Contains(Keys.Right)) { nextX += currentSpeed; Player.FacingRight = true; Player.IsMoving = true; }
 
-            RectangleF nextPlayerX = new RectangleF(nextX, Player.Pos.Y, Player.Size.Width, Player.Size.Height);
+            var nextPlayerX = new RectangleF(nextX, Player.Pos.Y, Player.Size.Width, Player.Size.Height);
             var canMoveX = true;
             foreach (var plat in CurrentLevel.Platforms)
                 if (nextPlayerX.IntersectsWith(plat)) { canMoveX = false; break; }
@@ -468,7 +447,7 @@ namespace LikhoStation
         {
             if (CurrentLevel.Name == "Kitchen" && !CurrentLevel.IsBagPickedUp)
             {
-                float centerX = Player.Pos.X + Player.Size.Width / 2;
+                var centerX = Player.Pos.X + Player.Size.Width / 2;
                 if (Math.Abs(centerX - (CurrentLevel.ItemBag.X + CurrentLevel.ItemBag.Width / 2)) < 150)
                 {
                     CurrentLevel.IsNearBag = true;

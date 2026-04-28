@@ -66,6 +66,10 @@ namespace LikhoStation
 
             g.TranslateTransform(-engine.CameraOffsetX, -engine.CameraOffsetY);
             DrawGeometry(g, engine);
+
+            // Отрисовываем врагов здесь
+            DrawEnemies(g, engine);
+
             DrawPlayerAndForeground(g, engine);
             g.ResetTransform();
 
@@ -90,8 +94,8 @@ namespace LikhoStation
 
         private void DrawOutlineText(Graphics g, string text, Font f, Brush c, int x, int y, bool isStrong = false)
         {
-            Brush ob = Brushes.Black;
-            int t = isStrong ? 4 : 2;
+            var ob = Brushes.Black;
+            var t = isStrong ? 4 : 2;
             g.DrawString(text, f, ob, x - t, y);
             g.DrawString(text, f, ob, x + t, y);
             g.DrawString(text, f, ob, x, y - t);
@@ -116,7 +120,7 @@ namespace LikhoStation
             DrawOutlineText(g, "СТАНЦИЯ ЛИХО", new Font(pixelFont, 24), Brushes.White, w / 2 - 250, h / 4, true);
 
             string[] opts = engine.HasSaveFile ? new[] { "Новая игра", "Продолжить", "Выход" } : new[] { "Новая игра", "Выход" };
-            Font menuFont = new Font(pixelFont, 14);
+            var menuFont = new Font(pixelFont, 14);
 
             for (int i = 0; i < opts.Length; i++)
             {
@@ -145,7 +149,7 @@ namespace LikhoStation
 
         private void DrawBackground(Graphics g, GameController engine, int w, int h)
         {
-            Level level = engine.CurrentLevel;
+            var level = engine.CurrentLevel;
             if (engine.Player.IsFocusMode) g.Clear(Color.FromArgb(5, 5, 10));
             else if (level.Name == "Kitchen")
             {
@@ -166,7 +170,7 @@ namespace LikhoStation
 
         private void DrawGeometry(Graphics g, GameController engine)
         {
-            Level level = engine.CurrentLevel;
+            var level = engine.CurrentLevel;
             foreach (var plat in level.Platforms)
             {
                 // Если включено чутьё - рисуем контуры
@@ -187,15 +191,16 @@ namespace LikhoStation
 
         private void DrawPlayerAndForeground(Graphics g, GameController engine)
         {
-            Level level = engine.CurrentLevel;
-            Player p = engine.Player;
-            bool isK = level.Name == "Kitchen";
-            Image idleImg = isK ? yanaHoodieIdle : yanaCoatIdle;
-            Image s = idleImg;
+            var level = engine.CurrentLevel;
+            var p = engine.Player;
+            var isK = level.Name == "Kitchen";
+            var idleImg = isK ? yanaHoodieIdle : yanaCoatIdle;
+            var s = idleImg;
 
             if (!p.IsGrounded && !isK) // Если в прыжке, то используем yana_coat_w2.png
+            {
                 if (yanaCoatWalk.Count > 1) s = yanaCoatWalk[1];
-
+            }
             else if (p.IsMoving && p.IsGrounded)
             {
                 var walkList = isK ? yanaHoodieWalk : yanaCoatWalk;
@@ -239,15 +244,24 @@ namespace LikhoStation
         private void DrawUI(Graphics g, Level level, Player p, float camX, float camY)
         {
             var uiFont = new Font(pixelFont, 12);
+            var screenWidth = (int)g.VisibleClipBounds.Width;
+            var screenHeight = (int)g.VisibleClipBounds.Height;
+            var locColor = Brushes.White;
 
             if (level.Name == "Kitchen") DrawKitchenUI(g, level, camX, camY);
-            else if (level.Name == "Street") DrawOutlineText(g, "УЛИЦА", uiFont, Brushes.LightSteelBlue, 40, 40);
-            else if (level.Name == "SubwayDescent") DrawOutlineText(g, "СПУСК В МЕТРО", uiFont, Brushes.DarkGray, 40, 40);
+            else if (level.Name == "Street") DrawOutlineText(g, "УЛИЦА", uiFont, locColor, 40, 40);
+            else if (level.Name == "SubwayDescent") DrawOutlineText(g, "СПУСК В МЕТРО", uiFont, locColor, 40, 40);
+            else if (level.Name == "AbandonedTrain") DrawOutlineText(g, "ЗАБРОШЕННЫЙ ПОЕЗД", uiFont, locColor, 40, 40);
+            else if (level.Name == "AbandonedStation") DrawOutlineText(g, "ЗАБРОШЕННАЯ СТАНЦИЯ", uiFont, locColor, 40, 40);
 
             if (!level.IsRealWorld) DrawOxygenUI(g, p);
-            if (p.IsFocusMode) DrawOutlineText(g, "ЧУТЬЕ АКТИВНО", new Font(pixelFont, 8), Brushes.Cyan, 40, 130);
 
-            DrawDialogUI(g, level, p, 1920, 1080);
+            if (p.IsFocusMode)
+            {
+                DrawOutlineText(g, "ЧУТЬЕ АКТИВНО", new Font(pixelFont, 8), Brushes.Cyan, 40, 80);
+            }
+
+            DrawDialogUI(g, level, p, screenWidth, screenHeight);
         }
 
         private void DrawKitchenUI(Graphics g, Level level, float camX, float camY)
@@ -267,9 +281,16 @@ namespace LikhoStation
             var textBrush = p.IsExhausted ? Brushes.Red : Brushes.White;
             var text = p.IsExhausted ? "ОДЫШКА!" : "ДЫХАНИЕ (Удерживай C)";
 
-            DrawOutlineText(g, text, new Font(pixelFont, 8), textBrush, 40, 80);
-            g.DrawRectangle(Pens.White, 40, 120, 200, 15);
-            g.FillRectangle(p.IsExhausted ? Brushes.Red : Brushes.LightSkyBlue, 41, 121, (p.Oxygen / p.MaxOxygen) * 198, 13);
+            var screenWidth = (int)g.VisibleClipBounds.Width;
+            var xPos = screenWidth - 450;
+            var barOffset = 200;
+
+            DrawOutlineText(g, text, new Font(pixelFont, 8), textBrush, xPos, 80);
+
+            g.DrawRectangle(Pens.White, xPos + barOffset, 120, 200, 15);
+
+            var barWidth = (p.Oxygen / p.MaxOxygen) * 198;
+            g.FillRectangle(p.IsExhausted ? Brushes.Red : Brushes.LightSkyBlue, xPos + barOffset + 1, 121, barWidth, 13);
         }
 
         private void DrawDialogUI(Graphics g, Level level, Player p, int w, int h)
@@ -277,7 +298,7 @@ namespace LikhoStation
             if (level.DialogStep == 0) return;
 
             Image img = null;
-            var origSize = new Size(3464, 1350); // Дефолт
+            var origSize = new Size(3464, 1350);
 
             if (level.DialogStep == 1) { img = dialog1; origSize = new Size(3464, 1687); }
             else if (level.DialogStep == 2) { img = dialog2; origSize = new Size(3464, 1350); }
@@ -309,6 +330,36 @@ namespace LikhoStation
             }
 
             return new Rectangle(posX, posY, drawW, drawH);
+        }
+
+        private void DrawEnemies(Graphics g, GameController engine)
+        {
+            if (engine.CurrentLevel.Enemies == null) return;
+
+            foreach (var enemy in engine.CurrentLevel.Enemies)
+            {
+                var enemyBrush = new SolidBrush(Color.FromArgb(200, 10, 10, 20));
+                g.FillRectangle(enemyBrush, enemy.Pos.X, enemy.Pos.Y, enemy.Size.Width, enemy.Size.Height);
+
+                if (engine.Player.IsFocusMode)
+                {
+                    DrawEnemyHearingRadius(g, enemy);
+                }
+            }
+        }
+
+        private void DrawEnemyHearingRadius(Graphics g, Enemy enemy)
+        {
+            var dangerColor = Color.FromArgb(100, 255, 0, 0); // Красная зона смерти
+
+            using (var p = new Pen(dangerColor, 3))
+            {
+                var x = enemy.Pos.X + enemy.Size.Width / 2 - enemy.KillRadius;
+                var y = enemy.Pos.Y + enemy.Size.Height / 2 - enemy.KillRadius;
+                var diameter = enemy.KillRadius * 2;
+
+                g.DrawEllipse(p, x, y, diameter, diameter);
+            }
         }
     }
 }

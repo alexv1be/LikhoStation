@@ -256,11 +256,16 @@ namespace LikhoStation
         private void LoadAbandonedTrain()
         {
             State = GameState.Playing;
-            CurrentLevel = new Level { Name = "AbandonedTrain", IsRealWorld = false, HasKhmar = true, WorldWidth = 2500 };
-            Player.Size = new Size(110, 220);
-            CurrentLevel.GroundY = screenHeight * 0.75f;
-            Player.Pos = new PointF(300, CurrentLevel.GroundY - Player.Size.Height);
-            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 2500, 500));
+
+            CurrentLevel = new Level { Name = "AbandonedTrain", IsRealWorld = false, HasKhmar = true };
+            CurrentLevel.IsStaticCamera = true;
+            CurrentLevel.WorldWidth = screenWidth;
+
+            Player.Size = new Size(220, 440);
+            CurrentLevel.GroundY = screenHeight * 0.9f;
+
+            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, screenWidth, 500));
         }
 
         private void LoadAbandonedStation()
@@ -271,6 +276,50 @@ namespace LikhoStation
             CurrentLevel.GroundY = screenHeight * 0.8f;
             Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 3500, 500));
+
+            var auka = new Enemy();
+            auka.Pos = new PointF(1500, CurrentLevel.GroundY - 350);
+            auka.PatrolStartX = 1500f;
+            auka.PatrolEndX = 2500f;
+            CurrentLevel.Enemies.Add(auka);
+        }
+
+        private void UpdateEnemies()
+        {
+            if (CurrentLevel == null) return;
+
+            foreach (var enemy in CurrentLevel.Enemies)
+            {
+                PatrolEnemy(enemy);
+                CheckEnemyCollision(enemy);
+            }
+        }
+
+        private void PatrolEnemy(Enemy enemy)
+        {
+            if (enemy.MovingRight)
+            {
+                enemy.Pos.X += enemy.Speed;
+                if (enemy.Pos.X >= enemy.PatrolEndX) enemy.MovingRight = false;
+            }
+            else
+            {
+                enemy.Pos.X -= enemy.Speed;
+                if (enemy.Pos.X <= enemy.PatrolStartX) enemy.MovingRight = true;
+            }
+        }
+
+        private void CheckEnemyCollision(Enemy enemy)
+        {
+            var dx = (Player.Pos.X + Player.Size.Width / 2) - (enemy.Pos.X + enemy.Size.Width / 2);
+            var dy = (Player.Pos.Y + Player.Size.Height / 2) - (enemy.Pos.Y + enemy.Size.Height / 2);
+            var dist = Math.Sqrt(dx * dx + dy * dy);
+
+            // Если Яна в зоне и дышит — загружаем уровень заново (смерть)
+            if (dist < enemy.KillRadius && !Player.IsHoldingBreath)
+            {
+                LoadScene(CurrentLevel.Name);
+            }
         }
 
         // ОБНОВЛЕНИЕ КАДРА
@@ -283,6 +332,7 @@ namespace LikhoStation
             UpdateInput(pressedKeys);
             MovePlayerX(pressedKeys);
             MovePlayerY(pressedKeys);
+            UpdateEnemies();
             CheckBoundaries();
             UpdateItems(pressedKeys);
             UpdateCamera();
@@ -306,7 +356,7 @@ namespace LikhoStation
         {
             CurrentLevel.DialogTimer++;
             var t = CurrentLevel.DialogTimer;
-            var limit = (CurrentLevel.DialogStep == 2) ? 70 : 90;
+            var limit = (CurrentLevel.DialogStep == 2) ? 50 : 70;
 
             if (t <= 15) CurrentLevel.DialogAlpha = t * 17;
             else if (t >= (limit - 15) && t <= limit) CurrentLevel.DialogAlpha = (limit - t) * 17;
@@ -345,12 +395,12 @@ namespace LikhoStation
             if (keys.Contains(Keys.C) && !Player.IsExhausted && !CurrentLevel.IsRealWorld)
             {
                 Player.IsHoldingBreath = true;
-                Player.Oxygen -= 0.3f;
+                Player.Oxygen -= 0.6f;
             }
             else
             {
                 Player.IsHoldingBreath = false;
-                if (Player.Oxygen < Player.MaxOxygen) Player.Oxygen += 0.5f;
+                if (Player.Oxygen < Player.MaxOxygen) Player.Oxygen += 0.4f;
             }
         }
 

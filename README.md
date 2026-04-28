@@ -4,7 +4,7 @@
 **Платформа:** Windows Forms (C# / GDI+)  
 **Сеттинг:** Современный славянский пост-хоррор (по мотивам вселенной Нади Совы) 
 
-<img src="/images/start_image.jpg" width="75%">
+<img src="/Assets/Images/start_image.jpg" width="75%">
 
 ---
 

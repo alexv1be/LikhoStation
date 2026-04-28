@@ -29,6 +29,17 @@ namespace LikhoStation
         public int WalkTimer = 0;
     }
 
+    public class Enemy
+    {
+        public PointF Pos;
+        public Size Size = new Size(150, 350);
+        public float Speed = 3.5f;
+        public float KillRadius = 250f; // Зона, в которой Яна умрет
+        public float PatrolStartX;
+        public float PatrolEndX;
+        public bool MovingRight = true;
+    }
+
     public class Level
     {
         public string Name;
@@ -55,5 +66,7 @@ namespace LikhoStation
         public int DialogStep = 0;
         public int DialogTimer = 0;
         public int DialogAlpha = 0;
+
+        public List<Enemy> Enemies = new List<Enemy>();
     }
 }

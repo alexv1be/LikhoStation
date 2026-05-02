@@ -12,6 +12,7 @@ namespace LikhoStation
         private HashSet<Keys> pressedKeys = new HashSet<Keys>();
         private System.Windows.Forms.Timer gameTimer = new System.Windows.Forms.Timer();
         private AxWMPLib.AxWindowsMediaPlayer videoPlayer;
+        private Label skipLabel;
 
         public Form1()
         {
@@ -40,7 +41,25 @@ namespace LikhoStation
             engine = new GameController(this.ClientSize.Width, this.ClientSize.Height);
             renderer = new GameRenderer();
 
+            skipLabel = new Label();
+            skipLabel.Text = "ПРОПУСТИТЬ (SPACE)";
+            skipLabel.ForeColor = Color.DimGray;
+            skipLabel.BackColor = Color.Black;
+            skipLabel.AutoSize = true;
+
+            skipLabel.Font = new Font(renderer.pixelFont, 8f, FontStyle.Regular);
+
+            skipLabel.Visible = false;
+            this.Controls.Add(skipLabel);
+
             engine.OnPlayVideo = PlayCutsceneVideo;
+            engine.OnStopVideo += () =>
+            {
+                videoPlayer.Visible = false;
+                videoPlayer.Ctlcontrols.stop();
+                skipLabel.Visible = false;
+            };
+
             videoPlayer.uiMode = "none";
             videoPlayer.PlayStateChange += VideoPlayer_PlayStateChange;
 
@@ -66,10 +85,8 @@ namespace LikhoStation
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
-            // Добавляем клавишу в список для непрерывного движения
             if (!pressedKeys.Contains(e.KeyCode)) pressedKeys.Add(e.KeyCode);
 
-            // Отправляем одиночное нажатие в Контроллер (для меню и Esc)
             engine.OnSingleKeyPress(e.KeyCode);
         }
 
@@ -88,6 +105,14 @@ namespace LikhoStation
             videoPlayer.URL = path;
             videoPlayer.Visible = true;
             videoPlayer.Ctlcontrols.play();
+
+            var labelX = (this.ClientSize.Width - skipLabel.Width) / 2;
+            var labelY = this.ClientSize.Height - skipLabel.Height - 20;
+
+            skipLabel.Location = new Point(labelX, labelY);
+
+            skipLabel.Visible = true;
+            skipLabel.BringToFront();
         }
 
         private void VideoPlayer_PlayStateChange(object sender, AxWMPLib._WMPOCXEvents_PlayStateChangeEvent e)
@@ -96,6 +121,7 @@ namespace LikhoStation
             if (e.newState == 8)
             {
                 videoPlayer.Visible = false;
+                skipLabel.Visible = false;
                 engine.EndVideoCutscene();
             }
         }

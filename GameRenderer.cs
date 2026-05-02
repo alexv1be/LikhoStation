@@ -27,7 +27,7 @@ namespace LikhoStation
         private List<Image> yanaCoatWalk = new List<Image>();
 
         private PrivateFontCollection customFonts = new PrivateFontCollection();
-        private FontFamily pixelFont;
+        public FontFamily pixelFont;
 
         public GameRenderer()
         {
@@ -59,7 +59,11 @@ namespace LikhoStation
 
         public void Draw(Graphics g, GameController engine, int screenWidth, int screenHeight)
         {
-            if (engine.State == GameState.MainMenu) { DrawMainMenu(g, engine, screenWidth, screenHeight); return; }
+            if (engine.State == GameState.MainMenu) 
+            {
+                DrawMainMenu(g, engine, screenWidth, screenHeight);
+                return;
+            }
 
             blinkCounter++;
             g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
@@ -69,16 +73,18 @@ namespace LikhoStation
             g.TranslateTransform(-engine.CameraOffsetX, -engine.CameraOffsetY);
             DrawGeometry(g, engine);
 
-            // Отрисовываем врагов здесь
             DrawEnemies(g, engine);
 
             DrawPlayerAndForeground(g, engine);
             g.ResetTransform();
 
-            if (engine.CurrentLevel.HasKhmar) DrawKhmar(g, engine.Player, engine.CameraOffsetX, engine.CameraOffsetY, screenWidth, screenHeight);
+            if (engine.CurrentLevel.HasKhmar) 
+                DrawKhmar(g, engine.Player, engine.CameraOffsetX, engine.CameraOffsetY, screenWidth, screenHeight);
+
             DrawUI(g, engine.CurrentLevel, engine.Player, engine.CameraOffsetX, engine.CameraOffsetY);
 
-            if (engine.State == GameState.Paused) DrawPauseMenu(g, engine, screenWidth, screenHeight);
+            if (engine.State == GameState.Paused) 
+                DrawPauseMenu(g, engine, screenWidth, screenHeight);
         }
 
         private void DrawImageWithAlpha(Graphics g, Image img, Rectangle dest, int alpha)

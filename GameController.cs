@@ -13,6 +13,7 @@ namespace LikhoStation
         public float CameraOffsetX { get; private set; }
         public float CameraOffsetY { get; private set; }
         public Action<string> OnPlayVideo;
+        public Action OnStopVideo;
 
         // МЕНЮ И СОСТОЯНИЯ
         public GameState State { get; private set; } = GameState.MainMenu;
@@ -39,6 +40,7 @@ namespace LikhoStation
             if (State == GameState.MainMenu) HandleMainMenuInput(key);
             else if (State == GameState.Playing) HandlePlayingInput(key);
             else if (State == GameState.Paused) HandlePausedInput(key);
+            else if (State == GameState.VideoPlaying) HandleVideoInput(key);
         }
 
         private void HandleMainMenuInput(Keys key)
@@ -101,6 +103,16 @@ namespace LikhoStation
                 }
             }
             else if (key == Keys.Escape) State = GameState.Playing;
+        }
+
+        private void HandleVideoInput(Keys key)
+        {
+            // Если нажали пробел — скипаем
+            if (key == Keys.Space)
+            {
+                OnStopVideo?.Invoke();
+                EndVideoCutscene();
+            }
         }
 
         // СОХРАНЕНИЕ И ЗАГРУЗКА
@@ -189,13 +201,11 @@ namespace LikhoStation
 
             CurrentLevel.Platforms.Clear();
 
-            // Ступенчатый сугроб (4 блока разной высоты, ширина от 400 до 600)
             CurrentLevel.Platforms.Add(new RectangleF(400, CurrentLevel.GroundY - 40, 40, 40));
             CurrentLevel.Platforms.Add(new RectangleF(440, CurrentLevel.GroundY - 90, 50, 90));
             CurrentLevel.Platforms.Add(new RectangleF(490, CurrentLevel.GroundY - 150, 60, 150));
             CurrentLevel.Platforms.Add(new RectangleF(550, CurrentLevel.GroundY - 80, 50, 80));
 
-            // Три куска пола (между ними ямы)
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 1100, screenHeight));
             CurrentLevel.Platforms.Add(new RectangleF(1450, CurrentLevel.GroundY, 950, screenHeight));
             CurrentLevel.Platforms.Add(new RectangleF(2700, CurrentLevel.GroundY, 1400, screenHeight));
@@ -212,7 +222,7 @@ namespace LikhoStation
             if (CurrentLevel.Name == "SubwayDescent" && Player.Pos.X >= 2800)
                 StartMetroCutscene();
 
-            if (CurrentLevel.Name == "AbandonedTrain" && Player.Pos.X >= 1400) // поменять
+            if (CurrentLevel.Name == "AbandonedTrain" && Player.Pos.X >= 1400)
                 LoadScene("AbandonedStation");
         }
 
@@ -278,7 +288,7 @@ namespace LikhoStation
             Player.Size = new Size(440, 880);
             CurrentLevel.GroundY = screenHeight * 0.95f;
 
-            Player.Speed = 15.0f; // поменять
+            Player.Speed = 15.0f;
 
             var startX = (screenWidth / 2f) - (Player.Size.Width / 2f);
             Player.Pos = new PointF(startX, CurrentLevel.GroundY - Player.Size.Height);
@@ -467,7 +477,7 @@ namespace LikhoStation
         {
             if (CurrentLevel.IsDialogActive) return;
 
-            var canJump = CurrentLevel.Name != "Kitchen" && CurrentLevel.Name != "SubwayDescent";
+            var canJump = CurrentLevel.Name != "Kitchen" && CurrentLevel.Name != "SubwayDescent" && CurrentLevel.Name != "AbandonedTrain";
             if (keys.Contains(Keys.Space) && Player.IsGrounded && !Player.IsHoldingBreath && canJump)
             {
                 Player.VelocityY = Player.JumpPower;

@@ -7,6 +7,9 @@ using System.Drawing;
 
 namespace LikhoStation.src.Models
 {
+    /// <summary>
+    /// Класс данных противника (например, Ауки) [cite: 6]. Хранит позицию, скорость, радиус смертельной зоны (KillRadius) и координаты точек, между которыми враг патрулирует территорию (PatrolStartX, PatrolEndX).
+    /// </summary>
     public class Enemy
     {
         public PointF Pos;

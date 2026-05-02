@@ -10,12 +10,20 @@ namespace LikhoStation.src.Core
     public partial class GameController
     {
         // УРОВНИ И ТРИГГЕРЫ
+
+        /// <summary>
+        /// Запускает новую игру, загружая стартовую локацию (Кухня).
+        /// </summary>
         private void StartNewGame()
         {
             LoadScene("Kitchen");
             State = GameState.Playing;
         }
 
+        /// <summary>
+        /// Базовый метод-маршрутизатор. Сбрасывает характеристики игрока и вызывает метод генерации конкретного уровня по его названию.
+        /// </summary>
+        /// <param name="sceneName"></param>
         public void LoadScene(string sceneName)
         {
             CurrentLevel = new Level { Name = sceneName };
@@ -31,6 +39,9 @@ namespace LikhoStation.src.Core
             else if (sceneName == "AbandonedStation") LoadAbandonedStation();
         }
 
+        /// <summary>
+        /// Генерирует локацию "Кухня бабушки" (реальный мир, статичная камера, обучение).
+        /// </summary>
         private void LoadKitchen()
         {
             CurrentLevel.IsRealWorld = true;
@@ -49,6 +60,9 @@ namespace LikhoStation.src.Core
             CurrentLevel.ItemBag = new RectangleF(630, CurrentLevel.GroundY - 407, 200, 200);
         }
 
+        /// <summary>
+        /// Генерирует локацию "Улица" (платформинг в реальном мире).
+        /// </summary>
         private void LoadStreet()
         {
             CurrentLevel.IsRealWorld = true;
@@ -74,6 +88,9 @@ namespace LikhoStation.src.Core
             CurrentLevel.Triggers.Add(new RectangleF(3000 + Player.Size.Width, CurrentLevel.GroundY - 450, 150, 450));
         }
 
+        /// <summary>
+        /// Проверяет координаты игрока для активации переходов между уровнями или запуска кат-сцен.
+        /// </summary>
         private void CheckLevelTriggers()
         {
             if (CurrentLevel.Name == "Street" && Player.Pos.X >= 3000)
@@ -86,6 +103,9 @@ namespace LikhoStation.src.Core
                 LoadScene("AbandonedStation");
         }
 
+        /// <summary>
+        /// Генерирует локацию "Спуск в метро" (длинная лестница вниз, камера следует по оси Y).
+        /// </summary>
         private void LoadSubwayDescent()
         {
             CurrentLevel = new Level { Name = "SubwayDescent" };
@@ -127,6 +147,9 @@ namespace LikhoStation.src.Core
             CurrentLevel.Triggers.Add(new RectangleF(2780 + Player.Size.Width, CurrentLevel.GroundY - 450, 150, 450));
         }
 
+        /// <summary>
+        /// Запускает видеоролик перехода персонажа в Изнанку.
+        /// </summary>
         private void StartMetroCutscene()
         {
             State = GameState.VideoPlaying;
@@ -134,12 +157,18 @@ namespace LikhoStation.src.Core
             OnPlayVideo?.Invoke(@"Assets\Video\metro_cutscene.mp4");
         }
 
+        /// <summary>
+        /// Завершает показ видеоролика и загружает первый уровень Изнанки.
+        /// </summary>
         public void EndVideoCutscene()
         {
             State = GameState.Playing;
             LoadScene("AbandonedTrain");
         }
 
+        /// <summary>
+        /// Генерирует локацию "Заброшенный поезд" (первое появление хмари и чутья).
+        /// </summary>
         private void LoadAbandonedTrain()
         {
             State = GameState.Playing;
@@ -160,6 +189,9 @@ namespace LikhoStation.src.Core
             CurrentLevel.Triggers.Add(new RectangleF(1400 + Player.Size.Width, CurrentLevel.GroundY - 450, 150, 450));
         }
 
+        /// <summary>
+        /// Генерирует локацию "Заброшенная станция" (появление первых врагов).
+        /// </summary>
         private void LoadAbandonedStation()
         {
             State = GameState.Playing;

@@ -10,6 +10,11 @@ namespace LikhoStation.src.Core
     public partial class GameController
     {
         // ОБРАБОТКА ВВОДА
+
+        /// <summary>
+        /// Главный обработчик одиночных нажатий клавиш. Перенаправляет ввод в зависимости от текущего состояния игры (меню, игра, пауза).
+        /// </summary>
+        /// <param name="key"></param>
         public void OnSingleKeyPress(Keys key)
         {
             if (State == GameState.MainMenu) HandleMainMenuInput(key);
@@ -18,6 +23,10 @@ namespace LikhoStation.src.Core
             else if (State == GameState.VideoPlaying) HandleVideoInput(key);
         }
 
+        /// <summary>
+        /// Обрабатывает навигацию и выбор пунктов в Главном меню.
+        /// </summary>
+        /// <param name="key"></param>
         private void HandleMainMenuInput(Keys key)
         {
             if (key == Keys.Up || key == Keys.W) MenuIndex--;
@@ -36,6 +45,10 @@ namespace LikhoStation.src.Core
             }
         }
 
+        /// <summary>
+        /// Обрабатывает системные нажатия во время геймплея (например, выход в меню паузы по Escape или включение режима разработчика).
+        /// </summary>
+        /// <param name="key"></param>
         private void HandlePlayingInput(Keys key)
         {
             if (key == Keys.Escape)
@@ -49,6 +62,10 @@ namespace LikhoStation.src.Core
             }
         }
 
+        /// <summary>
+        /// Обрабатывает навигацию и выбор пунктов в меню Паузы (продолжить, сохранить, выйти).
+        /// </summary>
+        /// <param name="key"></param>
         private void HandlePausedInput(Keys key)
         {
             if (key == Keys.Up || key == Keys.W) MenuIndex--;
@@ -84,6 +101,10 @@ namespace LikhoStation.src.Core
             else if (key == Keys.Escape) State = GameState.Playing;
         }
 
+        /// <summary>
+        /// Обрабатывает пропуск кат-сцен (например, по нажатию пробела).
+        /// </summary>
+        /// <param name="key"></param>
         private void HandleVideoInput(Keys key)
         {
             if (key == Keys.Space)
@@ -93,6 +114,10 @@ namespace LikhoStation.src.Core
             }
         }
 
+        /// <summary>
+        /// Обрабатывает зажатые клавиши (Shift для чутья, C для дыхания) и управляет запасом кислорода игрока.
+        /// </summary>
+        /// <param name="keys"></param>
         private void UpdateInput(HashSet<Keys> keys)
         {
             if (!CurrentLevel.IsRealWorld) Player.IsFocusMode = keys.Contains(Keys.ShiftKey);
@@ -104,7 +129,7 @@ namespace LikhoStation.src.Core
             if (keys.Contains(Keys.C) && !Player.IsExhausted && !CurrentLevel.IsRealWorld)
             {
                 Player.IsHoldingBreath = true;
-                Player.Oxygen -= 0.6f;
+                Player.Oxygen -= 1.3f;
             }
             else
             {

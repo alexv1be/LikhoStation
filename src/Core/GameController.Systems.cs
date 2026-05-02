@@ -9,7 +9,11 @@ namespace LikhoStation.src.Core
 {
     public partial class GameController
     {
-        // СОХРАНЕНИЕ И ЗАГРУЗКА
+        // СИСТЕМЫ
+
+        /// <summary>
+        /// Сохраняет текущий уровень, координаты игрока и прогресс в текстовый файл.
+        /// </summary>
         private void SaveGame()
         {
             var data = $"{CurrentLevel.Name}|{CurrentLevel.IsBagPickedUp}|{Player.Pos.X}|{Player.Pos.Y}";
@@ -17,6 +21,9 @@ namespace LikhoStation.src.Core
             HasSaveFile = true;
         }
 
+        /// <summary>
+        /// Считывает данные из файла сохранения и восстанавливает состояние игры.
+        /// </summary>
         private void LoadGame()
         {
             if (File.Exists(saveFilePath))
@@ -44,6 +51,10 @@ namespace LikhoStation.src.Core
         }
 
         // ДИАЛОГИ
+
+        /// <summary>
+        /// Проверяет условия для запуска кат-сцен с диалогами (например, когда игрок отходит от бабушки на кухне).
+        /// </summary>
         private void UpdateDialog()
         {
             if (CurrentLevel.Name != "Kitchen" || CurrentLevel.HasPlayedIntroDialog) return;
@@ -57,6 +68,9 @@ namespace LikhoStation.src.Core
             if (CurrentLevel.DialogStep > 0) ProcessDialogState();
         }
 
+        /// <summary>
+        /// Управляет таймером и плавностью появления/исчезновения (альфа-каналом) реплик диалога.
+        /// </summary>
         private void ProcessDialogState()
         {
             CurrentLevel.DialogTimer++;
@@ -74,6 +88,9 @@ namespace LikhoStation.src.Core
             if (t > limit) AdvanceDialogPhase();
         }
 
+        /// <summary>
+        /// Переключает стадии диалога и завершает его, когда все реплики показаны.
+        /// </summary>
         private void AdvanceDialogPhase()
         {
             CurrentLevel.DialogTimer = 0;
@@ -88,7 +105,9 @@ namespace LikhoStation.src.Core
             }
         }
 
-        //
+        /// <summary>
+        /// Рассчитывает текущий кадр спрайта ходьбы в зависимости от скорости движения игрока.
+        /// </summary>
         private void UpdateAnimation()
         {
             if (CurrentLevel.IsDialogActive)
@@ -107,8 +126,10 @@ namespace LikhoStation.src.Core
                 Player.WalkFrame = 0;
         }
 
-
-
+        /// <summary>
+        /// Проверяет, находится ли игрок рядом с квестовыми предметами (например, сумкой) и обрабатывает их поднятие.
+        /// </summary>
+        /// <param name="keys"></param>
         private void UpdateItems(HashSet<Keys> keys)
         {
             if (CurrentLevel.Name == "Kitchen" && !CurrentLevel.IsBagPickedUp)

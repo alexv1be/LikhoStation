@@ -28,7 +28,11 @@ namespace LikhoStation.src.Core
         private float gravity = 1.2f;
         private string saveFilePath = "save.txt";
 
-        // КОНСТРУКТОР
+        /// <summary>
+        /// Конструктор: Инициализирует базовые параметры контроллера, создает игрока и проверяет наличие файла сохранения.
+        /// </summary>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
         public GameController(int width, int height)
         {
             screenWidth = width;
@@ -37,7 +41,10 @@ namespace LikhoStation.src.Core
             HasSaveFile = File.Exists(saveFilePath);
         }
 
-        // ГЛАВНЫЙ МЕТОД ВЫЗОВОВ
+        /// <summary>
+        /// Главный игровой цикл. Вызывается каждый кадр для обновления всех систем (ввода, физики, врагов, камеры).
+        /// </summary>
+        /// <param name="pressedKeys"></param>
         public void Update(HashSet<Keys> pressedKeys)
         {
             if (State != GameState.Playing) return;

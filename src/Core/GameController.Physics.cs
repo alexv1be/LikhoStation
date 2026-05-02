@@ -8,6 +8,12 @@ namespace LikhoStation.src.Core
 {
     public partial class GameController
     {
+        //ФИЗИКА
+
+        /// <summary>
+        /// Обрабатывает движение игрока по оси X и проверяет столкновения с платформами по горизонтали.
+        /// </summary>
+        /// <param name="keys"></param>
         private void MovePlayerX(HashSet<Keys> keys)
         {
             Player.IsMoving = false;
@@ -30,6 +36,10 @@ namespace LikhoStation.src.Core
                 StartMetroCutscene();
         }
 
+        /// <summary>
+        /// Обрабатывает влияние гравитации, прыжки и проверяет столкновения с полом/потолком по оси Y.
+        /// </summary>
+        /// <param name="keys"></param>
         private void MovePlayerY(HashSet<Keys> keys)
         {
             if (CurrentLevel.IsDialogActive) return;
@@ -58,6 +68,9 @@ namespace LikhoStation.src.Core
             if (!hitGround) { Player.Pos.Y = nextY; Player.IsGrounded = false; }
         }
 
+        /// <summary>
+        /// Не дает игроку выйти за левый край экрана и обрабатывает падение в пропасть (перезагрузка уровня).
+        /// </summary>
         private void CheckBoundaries()
         {
             if (Player.Pos.X < 0) Player.Pos.X = 0;
@@ -78,6 +91,9 @@ namespace LikhoStation.src.Core
             if (Player.Pos.Y > CurrentLevel.GroundY + 1000) LoadScene(CurrentLevel.Name);
         }
 
+        /// <summary>
+        /// Вычисляет смещение (офсет) камеры, чтобы она плавно следовала за игроком.
+        /// </summary>
         private void UpdateCamera()
         {
             if (CurrentLevel.IsStaticCamera)

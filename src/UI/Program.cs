@@ -1,4 +1,4 @@
-namespace LikhoStation
+namespace LikhoStation.src.UI
 {
     internal static class Program
     {

@@ -18,6 +18,7 @@ namespace LikhoStation
         private Image dialog1, dialog2, dialog3;
         private Image subwayBg;
         private Image subwayFg;
+        private Image abandonedTrainBg;
 
         private Image yanaHoodieIdle;
         private List<Image> yanaHoodieWalk = new List<Image>();
@@ -39,6 +40,7 @@ namespace LikhoStation
             if (File.Exists(@"Assets\Images\street_bg.png")) streetBg = Image.FromFile(@"Assets\Images\street_bg.png");
             if (File.Exists(@"Assets\Images\subway_bg.png")) subwayBg = Image.FromFile(@"Assets\Images\subway_bg.png");
             if (File.Exists(@"Assets\Images\subway_fg.png")) subwayFg = Image.FromFile(@"Assets\Images\subway_fg.png");
+            if (File.Exists(@"Assets\Images\bg_abandoned_train.png")) abandonedTrainBg = Image.FromFile(@"Assets\Images\bg_abandoned_train.png");
 
             var p = @"Assets\Images\";
             if (File.Exists(p + "yana_hoodie_idle.png")) yanaHoodieIdle = Image.FromFile(p + "yana_hoodie_idle.png");
@@ -136,14 +138,15 @@ namespace LikhoStation
             g.FillRectangle(new SolidBrush(Color.FromArgb(150, 0, 0, 0)), 0, 0, w, h);
             DrawOutlineText(g, "ПАУЗА", new Font(pixelFont, 24), Brushes.White, w / 2 - 100, h / 4, true);
 
-            string[] options = { "Продолжить", "Сохранить", "Сохранить и выйти", "Выход из игры" };
+            string[] options = { "Продолжить", "Сохранить и продолжить", "Сохранить и выйти в главное меню", "Выйти в главное меню" };
             var menuFont = new Font(pixelFont, 14);
 
             for (int i = 0; i < options.Length; i++)
             {
                 var color = (i == engine.MenuIndex) ? Brushes.Cyan : Brushes.White;
                 var text = (i == engine.MenuIndex) ? "> " + options[i] + " <" : options[i];
-                DrawOutlineText(g, text, menuFont, color, w / 2 - 180, h / 2 + (i * 50));
+
+                DrawOutlineText(g, text, menuFont, color, w / 2 - 300, h / 2 + (i * 50));
             }
         }
 
@@ -166,6 +169,11 @@ namespace LikhoStation
                 if (subwayBg != null) g.DrawImage(subwayBg, -engine.CameraOffsetX, -engine.CameraOffsetY, level.WorldWidth, 2700);
                 else g.Clear(Color.FromArgb(30, 30, 35));
             }
+            else if (level.Name == "AbandonedTrain")
+            {
+                if (abandonedTrainBg != null) g.DrawImage(abandonedTrainBg, 0, 0, w, h);
+                else g.Clear(Color.Black);
+            }
         }
 
         private void DrawGeometry(Graphics g, GameController engine)
@@ -176,7 +184,7 @@ namespace LikhoStation
                 // Если включено чутьё - рисуем контуры
                 if (engine.Player.IsFocusMode)
                     g.DrawRectangle(new Pen(Color.FromArgb(50, 255, 255, 255), 2), plat.X, plat.Y, plat.Width, plat.Height);
-                else if (level.Name != "Kitchen" && level.Name != "Street" && level.Name != "SubwayDescent")
+                else if (level.Name != "Kitchen" && level.Name != "Street" && level.Name != "SubwayDescent" && level.Name != "AbandonedTrain")
                     g.FillRectangle(Brushes.Gray, plat);
             }
 
@@ -231,13 +239,29 @@ namespace LikhoStation
 
         private void DrawKhmar(Graphics g, Player p, float camX, float camY, int width, int height)
         {
+            var currentRadius = p.Size.Height > 500 ? 800 : 450;
+
+            var centerX = (p.Pos.X - camX) + p.Size.Width / 2;
+            var centerY = (p.Pos.Y - camY) + p.Size.Height / 3;
+            var fogColor = Color.FromArgb(250, 5, 5, 10);
+
             using (GraphicsPath wallPath = new GraphicsPath())
             {
                 wallPath.AddRectangle(new Rectangle(0, 0, width, height));
-                var centerX = (p.Pos.X - camX) + p.Size.Width / 2;
-                var centerY = (p.Pos.Y - camY) + p.Size.Height / 3;
-                wallPath.AddEllipse(centerX - visibilityRadius, centerY - visibilityRadius, visibilityRadius * 2, visibilityRadius * 2);
-                g.FillPath(new SolidBrush(Color.FromArgb(250, 5, 5, 10)), wallPath);
+                wallPath.AddEllipse(centerX - currentRadius, centerY - currentRadius, currentRadius * 2, currentRadius * 2);
+                g.FillPath(new SolidBrush(fogColor), wallPath);
+            }
+
+            using (GraphicsPath gradientPath = new GraphicsPath())
+            {
+                gradientPath.AddEllipse(centerX - currentRadius, centerY - currentRadius, currentRadius * 2, currentRadius * 2);
+                using (PathGradientBrush pgb = new PathGradientBrush(gradientPath))
+                {
+                    pgb.CenterColor = Color.Transparent;
+                    pgb.SurroundColors = new Color[] { fogColor };
+
+                    g.FillPath(pgb, gradientPath);
+                }
             }
         }
 

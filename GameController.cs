@@ -46,7 +46,7 @@ namespace LikhoStation
             if (key == Keys.Up || key == Keys.W) MenuIndex--;
             if (key == Keys.Down || key == Keys.S) MenuIndex++;
 
-            int maxIndex = HasSaveFile ? 2 : 1;
+            var maxIndex = HasSaveFile ? 2 : 1;
             if (MenuIndex < 0) MenuIndex = maxIndex;
             if (MenuIndex > maxIndex) MenuIndex = 0;
 
@@ -73,20 +73,32 @@ namespace LikhoStation
             if (key == Keys.Up || key == Keys.W) MenuIndex--;
             if (key == Keys.Down || key == Keys.S) MenuIndex++;
 
+            // Теперь у нас 4 пункта (0, 1, 2, 3)
             if (MenuIndex < 0) MenuIndex = 3;
             if (MenuIndex > 3) MenuIndex = 0;
 
             if (key == Keys.Enter)
             {
-                if (MenuIndex == 0) State = GameState.Playing;
-                else if (MenuIndex == 1) SaveGame();
+                if (MenuIndex == 0)
+                {
+                    State = GameState.Playing;
+                }
+                else if (MenuIndex == 1)
+                {
+                    SaveGame();
+                    State = GameState.Playing;
+                }
                 else if (MenuIndex == 2)
                 {
                     SaveGame();
                     State = GameState.MainMenu;
                     MenuIndex = 0;
                 }
-                else if (MenuIndex == 3) ShouldExit = true;
+                else if (MenuIndex == 3)
+                {
+                    State = GameState.MainMenu;
+                    MenuIndex = 0;
+                }
             }
             else if (key == Keys.Escape) State = GameState.Playing;
         }
@@ -199,6 +211,9 @@ namespace LikhoStation
 
             if (CurrentLevel.Name == "SubwayDescent" && Player.Pos.X >= 2800)
                 StartMetroCutscene();
+
+            if (CurrentLevel.Name == "AbandonedTrain" && Player.Pos.X >= 1400) // поменять
+                LoadScene("AbandonedStation");
         }
 
         private void LoadSubwayDescent()
@@ -257,14 +272,17 @@ namespace LikhoStation
         {
             State = GameState.Playing;
 
-            CurrentLevel = new Level { Name = "AbandonedTrain", IsRealWorld = false, HasKhmar = true };
+            CurrentLevel = new Level { Name = "AbandonedTrain", IsRealWorld = false, HasKhmar = true, WorldWidth = screenWidth };
             CurrentLevel.IsStaticCamera = true;
-            CurrentLevel.WorldWidth = screenWidth;
 
-            Player.Size = new Size(220, 440);
-            CurrentLevel.GroundY = screenHeight * 0.9f;
+            Player.Size = new Size(440, 880);
+            CurrentLevel.GroundY = screenHeight * 0.95f;
 
-            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
+            Player.Speed = 15.0f; // поменять
+
+            var startX = (screenWidth / 2f) - (Player.Size.Width / 2f);
+            Player.Pos = new PointF(startX, CurrentLevel.GroundY - Player.Size.Height);
+
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, screenWidth, 500));
         }
 

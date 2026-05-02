@@ -53,6 +53,8 @@ namespace LikhoStation
         public bool IsRealWorld = true;
 
         public List<RectangleF> Platforms = new List<RectangleF>();
+        public List<RectangleF> Triggers = new List<RectangleF>();
+
         public RectangleF ItemBag;
         public bool IsBagPickedUp = false;
         public bool IsNearBag = false;

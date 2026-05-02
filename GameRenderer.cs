@@ -81,7 +81,7 @@ namespace LikhoStation
             if (engine.CurrentLevel.HasKhmar) 
                 DrawKhmar(g, engine.Player, engine.CameraOffsetX, engine.CameraOffsetY, screenWidth, screenHeight);
 
-            DrawUI(g, engine.CurrentLevel, engine.Player, engine.CameraOffsetX, engine.CameraOffsetY);
+            DrawUI(g, engine);
 
             if (engine.State == GameState.Paused) 
                 DrawPauseMenu(g, engine, screenWidth, screenHeight);
@@ -159,7 +159,13 @@ namespace LikhoStation
         private void DrawBackground(Graphics g, GameController engine, int w, int h)
         {
             var level = engine.CurrentLevel;
-            if (engine.Player.IsFocusMode) g.Clear(Color.FromArgb(5, 5, 10));
+
+            if (engine.Player.IsFocusMode || engine.IsDevMode)
+            {
+                g.Clear(Color.FromArgb(5, 5, 10));
+                return;
+            }
+
             else if (level.Name == "Kitchen")
             {
                 if (kitchenBg != null) g.DrawImage(kitchenBg, 0, 0, w, h);
@@ -185,21 +191,47 @@ namespace LikhoStation
         private void DrawGeometry(Graphics g, GameController engine)
         {
             var level = engine.CurrentLevel;
-            foreach (var plat in level.Platforms)
+
+            var allVisualBlocks = new List<RectangleF>();
+            allVisualBlocks.AddRange(level.Platforms);
+            allVisualBlocks.AddRange(level.Triggers);
+
+            foreach (var plat in allVisualBlocks)
             {
-                // Если включено чутьё - рисуем контуры
-                if (engine.Player.IsFocusMode)
+                if (engine.IsDevMode)
+                {
+                    g.FillRectangle(Brushes.Black, plat);
+                    g.DrawRectangle(Pens.White, plat.X, plat.Y, plat.Width, plat.Height);
+                }
+                else if (engine.Player.IsFocusMode)
+                {
                     g.DrawRectangle(new Pen(Color.FromArgb(50, 255, 255, 255), 2), plat.X, plat.Y, plat.Width, plat.Height);
+                }
                 else if (level.Name != "Kitchen" && level.Name != "Street" && level.Name != "SubwayDescent" && level.Name != "AbandonedTrain")
+                {
                     g.FillRectangle(Brushes.Gray, plat);
+                }
             }
 
             if (level.Name == "Kitchen" && !level.IsBagPickedUp)
             {
-                if (bagImg != null) g.DrawImage(bagImg, level.ItemBag);
-                else g.FillRectangle(Brushes.SaddleBrown, level.ItemBag);
+                if (engine.IsDevMode)
+                {
+                    g.FillRectangle(Brushes.Black, level.ItemBag);
+                    g.DrawRectangle(Pens.White, level.ItemBag.X, level.ItemBag.Y, level.ItemBag.Width, level.ItemBag.Height);
+                }
+                else
+                {
+                    if (bagImg != null && !engine.Player.IsFocusMode)
+                        g.DrawImage(bagImg, level.ItemBag);
+                    else if (!engine.Player.IsFocusMode)
+                        g.FillRectangle(Brushes.SaddleBrown, level.ItemBag);
 
-                if (engine.Player.IsFocusMode) g.DrawRectangle(new Pen(Color.Yellow, 4), level.ItemBag.X, level.ItemBag.Y, level.ItemBag.Width, level.ItemBag.Height);
+                    if (engine.Player.IsFocusMode)
+                    {
+                        g.DrawRectangle(new Pen(Color.Yellow, 4), level.ItemBag.X, level.ItemBag.Y, level.ItemBag.Width, level.ItemBag.Height);
+                    }
+                }
             }
         }
 
@@ -211,7 +243,7 @@ namespace LikhoStation
             var idleImg = isK ? yanaHoodieIdle : yanaCoatIdle;
             var s = idleImg;
 
-            if (!p.IsGrounded && !isK) // Если в прыжке, то используем yana_coat_w2.png
+            if (!p.IsGrounded && !isK)
             {
                 if (yanaCoatWalk.Count > 1) s = yanaCoatWalk[1];
             }
@@ -224,7 +256,7 @@ namespace LikhoStation
 
             if (s != null) DrawEntitySprite(g, s, p);
 
-            if (level.Name == "SubwayDescent" && subwayFg != null && !p.IsFocusMode)
+            if (level.Name == "SubwayDescent" && subwayFg != null && !p.IsFocusMode && !engine.IsDevMode)
                 g.DrawImage(subwayFg, 0, 0, level.WorldWidth, 2700);
         }
 
@@ -271,8 +303,13 @@ namespace LikhoStation
             }
         }
 
-        private void DrawUI(Graphics g, Level level, Player p, float camX, float camY)
+        private void DrawUI(Graphics g, GameController engine)
         {
+            var level = engine.CurrentLevel;
+            var p = engine.Player;
+            var camX = engine.CameraOffsetX;
+            var camY = engine.CameraOffsetY;
+
             var uiFont = new Font(pixelFont, 12);
             var screenWidth = (int)g.VisibleClipBounds.Width;
             var screenHeight = (int)g.VisibleClipBounds.Height;
@@ -287,9 +324,10 @@ namespace LikhoStation
             if (!level.IsRealWorld) DrawOxygenUI(g, p);
 
             if (p.IsFocusMode)
-            {
                 DrawOutlineText(g, "ЧУТЬЕ АКТИВНО", new Font(pixelFont, 8), Brushes.Cyan, 40, 80);
-            }
+
+            if (engine.IsDevMode)
+                DrawOutlineText(g, "РЕЖИМ РАЗРАБОТЧИКА (CTRL)", new Font(pixelFont, 8), Brushes.Orange, 40, 85);
 
             DrawDialogUI(g, level, p, screenWidth, screenHeight);
         }

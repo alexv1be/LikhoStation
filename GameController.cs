@@ -20,6 +20,7 @@ namespace LikhoStation
         public int MenuIndex { get; private set; } = 0;
         public bool HasSaveFile { get; private set; }
         public bool ShouldExit { get; private set; } = false;
+        public bool IsDevMode { get; private set; } = false;
 
         private int screenWidth;
         private int screenHeight;
@@ -67,6 +68,10 @@ namespace LikhoStation
             {
                 State = GameState.Paused;
                 MenuIndex = 0;
+            }
+            if (key == Keys.ControlKey)
+            {
+                IsDevMode = !IsDevMode;
             }
         }
 
@@ -210,8 +215,7 @@ namespace LikhoStation
             CurrentLevel.Platforms.Add(new RectangleF(1450, CurrentLevel.GroundY, 950, screenHeight));
             CurrentLevel.Platforms.Add(new RectangleF(2700, CurrentLevel.GroundY, 1400, screenHeight));
 
-            CurrentLevel.ForegroundObject = new RectangleF(3200, CurrentLevel.GroundY - 500, 300, 500);
-            CurrentLevel.HasForegroundObject = true;
+            CurrentLevel.Triggers.Add(new RectangleF(3000 + Player.Size.Width, CurrentLevel.GroundY - 450, 150, 450));
         }
 
         private void CheckLevelTriggers()
@@ -219,7 +223,7 @@ namespace LikhoStation
             if (CurrentLevel.Name == "Street" && Player.Pos.X >= 3000)
                 LoadSubwayDescent();
 
-            if (CurrentLevel.Name == "SubwayDescent" && Player.Pos.X >= 2800)
+            if (CurrentLevel.Name == "SubwayDescent" && Player.Pos.X >= 2780)
                 StartMetroCutscene();
 
             if (CurrentLevel.Name == "AbandonedTrain" && Player.Pos.X >= 1400)
@@ -263,6 +267,8 @@ namespace LikhoStation
 
             CurrentLevel.MaxCameraOffsetY = bottomY - screenHeight * 0.85f;
             if (CurrentLevel.MaxCameraOffsetY < 0) CurrentLevel.MaxCameraOffsetY = 0;
+
+            CurrentLevel.Triggers.Add(new RectangleF(2780 + Player.Size.Width, CurrentLevel.GroundY - 450, 150, 450));
         }
 
         private void StartMetroCutscene()
@@ -294,6 +300,8 @@ namespace LikhoStation
             Player.Pos = new PointF(startX, CurrentLevel.GroundY - Player.Size.Height);
 
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, screenWidth, 500));
+
+            CurrentLevel.Triggers.Add(new RectangleF(1400 + Player.Size.Width, CurrentLevel.GroundY - 450, 150, 450));
         }
 
         private void LoadAbandonedStation()
@@ -413,9 +421,8 @@ namespace LikhoStation
 
         private void UpdateInput(HashSet<Keys> keys)
         {
-            // Отключаем чутье художника на кухне (!!добавить еще локи)
-            if (CurrentLevel.Name == "Kitchen") Player.IsFocusMode = false;
-            else Player.IsFocusMode = keys.Contains(Keys.ShiftKey);
+            if (!CurrentLevel.IsRealWorld) Player.IsFocusMode = keys.Contains(Keys.ShiftKey);
+            else Player.IsFocusMode = false;
 
             if (Player.Oxygen <= 0) Player.IsExhausted = true;
             if (Player.Oxygen > Player.MaxOxygen * 0.3f) Player.IsExhausted = false;

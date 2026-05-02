@@ -1,0 +1,179 @@
+﻿using LikhoStation.src.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace LikhoStation.src.Core
+{
+    public partial class GameController
+    {
+        // УРОВНИ И ТРИГГЕРЫ
+        private void StartNewGame()
+        {
+            LoadScene("Kitchen");
+            State = GameState.Playing;
+        }
+
+        public void LoadScene(string sceneName)
+        {
+            CurrentLevel = new Level { Name = sceneName };
+            CurrentLevel.GroundY = screenHeight * 0.75f;
+
+            Player.Oxygen = Player.MaxOxygen;
+            Player.IsExhausted = false;
+
+            if (sceneName == "Kitchen") LoadKitchen();
+            else if (sceneName == "Street") LoadStreet();
+            else if (sceneName == "SubwayDescent") LoadSubwayDescent();
+            else if (sceneName == "AbandonedTrain") LoadAbandonedTrain();
+            else if (sceneName == "AbandonedStation") LoadAbandonedStation();
+        }
+
+        private void LoadKitchen()
+        {
+            CurrentLevel.IsRealWorld = true;
+            CurrentLevel.HasKhmar = false;
+            CurrentLevel.IsStaticCamera = true;
+            CurrentLevel.WorldWidth = screenWidth;
+            CurrentLevel.GroundY = screenHeight * 0.97f;
+
+            Player.Speed = 10.0f;
+            Player.Size = new Size(325, 650);
+            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
+
+            CurrentLevel.Platforms.Clear();
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, CurrentLevel.WorldWidth, screenHeight - CurrentLevel.GroundY));
+
+            CurrentLevel.ItemBag = new RectangleF(630, CurrentLevel.GroundY - 407, 200, 200);
+        }
+
+        private void LoadStreet()
+        {
+            CurrentLevel.IsRealWorld = true;
+            CurrentLevel.HasKhmar = false;
+            CurrentLevel.IsStaticCamera = false;
+            CurrentLevel.WorldWidth = 3500;
+            CurrentLevel.GroundY = screenHeight * 0.91f;
+
+            Player.Size = new Size(125, 250);
+            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
+
+            CurrentLevel.Platforms.Clear();
+
+            CurrentLevel.Platforms.Add(new RectangleF(400, CurrentLevel.GroundY - 40, 40, 40));
+            CurrentLevel.Platforms.Add(new RectangleF(440, CurrentLevel.GroundY - 90, 50, 90));
+            CurrentLevel.Platforms.Add(new RectangleF(490, CurrentLevel.GroundY - 150, 60, 150));
+            CurrentLevel.Platforms.Add(new RectangleF(550, CurrentLevel.GroundY - 80, 50, 80));
+
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 1100, screenHeight));
+            CurrentLevel.Platforms.Add(new RectangleF(1450, CurrentLevel.GroundY, 950, screenHeight));
+            CurrentLevel.Platforms.Add(new RectangleF(2700, CurrentLevel.GroundY, 1400, screenHeight));
+
+            CurrentLevel.Triggers.Add(new RectangleF(3000 + Player.Size.Width, CurrentLevel.GroundY - 450, 150, 450));
+        }
+
+        private void CheckLevelTriggers()
+        {
+            if (CurrentLevel.Name == "Street" && Player.Pos.X >= 3000)
+                LoadSubwayDescent();
+
+            if (CurrentLevel.Name == "SubwayDescent" && Player.Pos.X >= 2780)
+                StartMetroCutscene();
+
+            if (CurrentLevel.Name == "AbandonedTrain" && Player.Pos.X >= 1400)
+                LoadScene("AbandonedStation");
+        }
+
+        private void LoadSubwayDescent()
+        {
+            CurrentLevel = new Level { Name = "SubwayDescent" };
+            CurrentLevel.IsRealWorld = true;
+            CurrentLevel.HasKhmar = false;
+            CurrentLevel.FollowY = true;
+            CurrentLevel.WorldWidth = 3500;
+
+            Player.Speed = 10.0f;
+            Player.Size = new Size(250, 500);
+
+            var startY = 1040f;
+
+            Player.Pos = new PointF(300, startY - Player.Size.Height - 50);
+
+            CurrentLevel.Platforms.Clear();
+
+            CurrentLevel.Platforms.Add(new RectangleF(0, startY, 1130, 2000));
+
+            var steps = 31;
+            var stepW = 37;
+            var stepH = 49;
+
+            for (int i = 0; i < steps; i++)
+            {
+                var x = 1130 + i * stepW;
+                var y = startY + i * stepH;
+                CurrentLevel.Platforms.Add(new RectangleF(x, y, stepW, 2000));
+            }
+
+            var bottomY = startY + steps * stepH;
+            CurrentLevel.GroundY = bottomY;
+
+            CurrentLevel.Platforms.Add(new RectangleF(1130 + steps * stepW, bottomY, 2000, 2000));
+
+            CurrentLevel.MaxCameraOffsetY = bottomY - screenHeight * 0.85f;
+            if (CurrentLevel.MaxCameraOffsetY < 0) CurrentLevel.MaxCameraOffsetY = 0;
+
+            CurrentLevel.Triggers.Add(new RectangleF(2780 + Player.Size.Width, CurrentLevel.GroundY - 450, 150, 450));
+        }
+
+        private void StartMetroCutscene()
+        {
+            State = GameState.VideoPlaying;
+
+            OnPlayVideo?.Invoke(@"Assets\Video\metro_cutscene.mp4");
+        }
+
+        public void EndVideoCutscene()
+        {
+            State = GameState.Playing;
+            LoadScene("AbandonedTrain");
+        }
+
+        private void LoadAbandonedTrain()
+        {
+            State = GameState.Playing;
+
+            CurrentLevel = new Level { Name = "AbandonedTrain", IsRealWorld = false, HasKhmar = true, WorldWidth = screenWidth };
+            CurrentLevel.IsStaticCamera = true;
+
+            Player.Size = new Size(440, 880);
+            CurrentLevel.GroundY = screenHeight * 0.95f;
+
+            Player.Speed = 15.0f;
+
+            var startX = screenWidth / 2f - Player.Size.Width / 2f;
+            Player.Pos = new PointF(startX, CurrentLevel.GroundY - Player.Size.Height);
+
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, screenWidth, 500));
+
+            CurrentLevel.Triggers.Add(new RectangleF(1400 + Player.Size.Width, CurrentLevel.GroundY - 450, 150, 450));
+        }
+
+        private void LoadAbandonedStation()
+        {
+            State = GameState.Playing;
+            CurrentLevel = new Level { Name = "AbandonedStation", IsRealWorld = false, HasKhmar = true, WorldWidth = 3500 };
+            Player.Size = new Size(110, 240);
+            CurrentLevel.GroundY = screenHeight * 0.8f;
+            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 3500, 500));
+
+            var auka = new Enemy();
+            auka.Pos = new PointF(1500, CurrentLevel.GroundY - 350);
+            auka.PatrolStartX = 1500f;
+            auka.PatrolEndX = 2500f;
+            CurrentLevel.Enemies.Add(auka);
+        }
+    }
+}

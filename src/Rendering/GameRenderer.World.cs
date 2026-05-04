@@ -50,6 +50,13 @@ namespace LikhoStation.src.Rendering
                 if (abandonedTrainBg != null) g.DrawImage(abandonedTrainBg, 0, 0, w, h);
                 else g.Clear(Color.Black);
             }
+            else if (level.Name == "AbandonedStation")
+            {
+                if (abandonedStationBg != null)
+                    g.DrawImage(abandonedStationBg, -engine.CameraOffsetX, 0, level.WorldWidth, h);
+                else
+                    g.Clear(Color.FromArgb(20, 20, 25));
+            }
         }
 
         /// <summary>
@@ -76,7 +83,7 @@ namespace LikhoStation.src.Rendering
                 {
                     g.DrawRectangle(new Pen(Color.FromArgb(50, 255, 255, 255), 2), plat.X, plat.Y, plat.Width, plat.Height);
                 }
-                else if (level.Name != "Kitchen" && level.Name != "Street" && level.Name != "SubwayDescent" && level.Name != "AbandonedTrain")
+                else if (level.Name != "Kitchen" && level.Name != "Street" && level.Name != "SubwayDescent" && level.Name != "AbandonedTrain" && level.Name != "AbandonedStation")
                 {
                     g.FillRectangle(Brushes.Gray, plat);
                 }
@@ -115,27 +122,30 @@ namespace LikhoStation.src.Rendering
         /// <param name="height"></param>
         private void DrawKhmar(Graphics g, Player p, float camX, float camY, int width, int height)
         {
-            var currentRadius = p.Size.Height > 500 ? 800 : 450;
+            var baseSize = p.Size.Height > 500 ? 1000 : 700;
+
+            var radiusX = baseSize * 1.5f;
+            var radiusY = baseSize * 0.8f;
 
             var centerX = p.Pos.X - camX + p.Size.Width / 2;
             var centerY = p.Pos.Y - camY + p.Size.Height / 3;
+
             var fogColor = Color.FromArgb(250, 5, 5, 10);
 
             using (GraphicsPath wallPath = new GraphicsPath())
             {
                 wallPath.AddRectangle(new Rectangle(0, 0, width, height));
-                wallPath.AddEllipse(centerX - currentRadius, centerY - currentRadius, currentRadius * 2, currentRadius * 2);
+                wallPath.AddEllipse(centerX - radiusX, centerY - radiusY, radiusX * 2, radiusY * 2);
                 g.FillPath(new SolidBrush(fogColor), wallPath);
             }
 
             using (GraphicsPath gradientPath = new GraphicsPath())
             {
-                gradientPath.AddEllipse(centerX - currentRadius, centerY - currentRadius, currentRadius * 2, currentRadius * 2);
+                gradientPath.AddEllipse(centerX - radiusX, centerY - radiusY, radiusX * 2, radiusY * 2);
                 using (PathGradientBrush pgb = new PathGradientBrush(gradientPath))
                 {
                     pgb.CenterColor = Color.Transparent;
                     pgb.SurroundColors = new Color[] { fogColor };
-
                     g.FillPath(pgb, gradientPath);
                 }
             }

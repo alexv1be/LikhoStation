@@ -52,13 +52,36 @@ namespace LikhoStation.src.Rendering
         {
             var state = g.Save();
 
+            // Логика отзеркаливания
             if (!p.FacingRight)
             {
                 g.TranslateTransform(p.Pos.X * 2 + p.Size.Width, 0);
                 g.ScaleTransform(-1, 1);
             }
 
-            g.DrawImage(s, p.Pos.X, p.Pos.Y, p.Size.Width, p.Size.Height);
+            if (p.IsHoldingBreath)
+            {
+                var cm = new System.Drawing.Imaging.ColorMatrix(new float[][]
+                {
+                    new float[] {0.6f, 0, 0, 0, 0},
+                    new float[] {0, 0.8f, 0, 0, 0},
+                    new float[] {0, 0, 1.3f, 0, 0},
+                    new float[] {0, 0, 0, 1, 0},
+                    new float[] {0, 0, 0, 0, 1}
+                });
+
+                using (var ia = new System.Drawing.Imaging.ImageAttributes())
+                {
+                    ia.SetColorMatrix(cm);
+                    var rect = new Rectangle((int)p.Pos.X, (int)p.Pos.Y, p.Size.Width, p.Size.Height);
+
+                    g.DrawImage(s, rect, 0, 0, s.Width, s.Height, GraphicsUnit.Pixel, ia);
+                }
+            }
+            else
+            {
+                g.DrawImage(s, p.Pos.X, p.Pos.Y, p.Size.Width, p.Size.Height);
+            }
 
             g.Restore(state);
         }
@@ -71,12 +94,38 @@ namespace LikhoStation.src.Rendering
         private void DrawEnemies(Graphics g, GameController engine)
         {
             if (engine.CurrentLevel.Enemies == null) return;
-
             foreach (var enemy in engine.CurrentLevel.Enemies)
             {
-                var enemyBrush = new SolidBrush(Color.FromArgb(200, 10, 10, 20));
-                g.FillRectangle(enemyBrush, enemy.Pos.X, enemy.Pos.Y, enemy.Size.Width, enemy.Size.Height);
+                Image enemySprite = null;
 
+                if (engine.CurrentLevel.Name == "AbandonedStation")
+                {
+                    enemySprite = enemy.IsPlayerNear ? likhoReach : likhoWalk;
+                }
+
+                if (enemySprite != null)
+                {
+                    var state = g.Save();
+                    float drawHeight = enemy.Size.Height;
+                    float drawWidth = ((float)enemySprite.Width / enemySprite.Height) * drawHeight;
+
+                    if (!enemy.MovingRight)
+                    {
+                        g.TranslateTransform(enemy.Pos.X * 2 + enemy.Size.Width, 0);
+                        g.ScaleTransform(-1, 1);
+                    }
+
+                    g.DrawImage(enemySprite, enemy.Pos.X, enemy.Pos.Y, drawWidth, drawHeight);
+
+                    g.Restore(state);
+                }
+                else
+                {
+                    var enemyBrush = new SolidBrush(Color.FromArgb(200, 10, 10, 20));
+                    g.FillRectangle(enemyBrush, enemy.Pos.X, enemy.Pos.Y, enemy.Size.Width, enemy.Size.Height);
+                }
+
+                // Отрисовка красного круга смерти (если зажат Shift)
                 if (engine.Player.IsFocusMode)
                 {
                     DrawEnemyHearingRadius(g, enemy);

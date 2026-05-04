@@ -195,17 +195,34 @@ namespace LikhoStation.src.Core
         private void LoadAbandonedStation()
         {
             State = GameState.Playing;
-            CurrentLevel = new Level { Name = "AbandonedStation", IsRealWorld = false, HasKhmar = true, WorldWidth = 3500 };
-            Player.Size = new Size(110, 240);
-            CurrentLevel.GroundY = screenHeight * 0.8f;
-            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
-            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 3500, 500));
 
-            var auka = new Enemy();
-            auka.Pos = new PointF(1500, CurrentLevel.GroundY - 350);
-            auka.PatrolStartX = 1500f;
-            auka.PatrolEndX = 2500f;
-            CurrentLevel.Enemies.Add(auka);
+            // Рассчитываем правильную ширину уровня под сгенерированный арт (21:9)
+            int correctWidth = (int)(screenHeight * (21f / 9f));
+
+            // Устанавливаем нашу идеальную ширину
+            CurrentLevel = new Level { Name = "AbandonedStation", IsRealWorld = false, HasKhmar = true, WorldWidth = correctWidth };
+
+            CurrentLevel.IsStaticCamera = false;
+
+            Player.Size = new Size(220, 480);
+            CurrentLevel.GroundY = screenHeight * 0.75f;
+            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
+
+            CurrentLevel.Platforms.Clear();
+
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 550, 500));
+            CurrentLevel.Platforms.Add(new RectangleF(1000, CurrentLevel.GroundY, 2400, 500));
+
+            var likho = new Enemy();
+            likho.Size = new Size(280, 650);
+            likho.Pos = new PointF(1500, CurrentLevel.GroundY - likho.Size.Height);
+            likho.Speed = 6.5f;
+            likho.KillRadius = 400f;
+            likho.WarningRadius = 750f;
+
+            likho.PatrolStartX = 1500f;
+            likho.PatrolEndX = correctWidth - 300f;
+            CurrentLevel.Enemies.Add(likho);
         }
     }
 }

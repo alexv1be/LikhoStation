@@ -20,7 +20,7 @@ namespace LikhoStation.src.Core
 
             if (CurrentLevel.IsDialogActive) return;
             var currentSpeed = Player.IsGrounded ? Player.Speed : Player.AirSpeed;
-            if (Player.IsHoldingBreath) currentSpeed /= 3.0f;
+            if (Player.IsHoldingBreath) currentSpeed /= 1.5f;
             var nextX = Player.Pos.X;
 
             if (keys.Contains(Keys.A) || keys.Contains(Keys.Left)) { nextX -= currentSpeed; Player.FacingRight = false; Player.IsMoving = true; }

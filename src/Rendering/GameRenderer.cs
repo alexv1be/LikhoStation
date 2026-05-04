@@ -21,6 +21,10 @@ namespace LikhoStation.src.Rendering
         private Image subwayBg;
         private Image subwayFg;
         private Image abandonedTrainBg;
+        private Image abandonedStationBg;
+
+        private Image likhoWalk;
+        private Image likhoReach;
 
         private Image yanaHoodieIdle;
         private List<Image> yanaHoodieWalk = new List<Image>();
@@ -46,6 +50,10 @@ namespace LikhoStation.src.Rendering
             if (File.Exists(@"Assets\Images\subway_bg.png")) subwayBg = Image.FromFile(@"Assets\Images\subway_bg.png");
             if (File.Exists(@"Assets\Images\subway_fg.png")) subwayFg = Image.FromFile(@"Assets\Images\subway_fg.png");
             if (File.Exists(@"Assets\Images\bg_abandoned_train.png")) abandonedTrainBg = Image.FromFile(@"Assets\Images\bg_abandoned_train.png");
+            if (File.Exists(@"Assets\Images\bg_abandoned_station.png")) abandonedStationBg = Image.FromFile(@"Assets\Images\bg_abandoned_station.png");
+
+            if (File.Exists(@"Assets\Images\likho_walk.png")) likhoWalk = Image.FromFile(@"Assets\Images\likho_walk.png");
+            if (File.Exists(@"Assets\Images\likho_reach.png")) likhoReach = Image.FromFile(@"Assets\Images\likho_reach.png");
 
             var p = @"Assets\Images\";
             if (File.Exists(p + "yana_hoodie_idle.png")) yanaHoodieIdle = Image.FromFile(p + "yana_hoodie_idle.png");

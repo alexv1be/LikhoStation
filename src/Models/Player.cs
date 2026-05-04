@@ -15,8 +15,8 @@ namespace LikhoStation.src.Models
         public PointF Pos;
         public Size Size = new Size(60, 120);
 
-        public float Speed = 8.0f;
-        public float AirSpeed = 10.0f;
+        public float Speed = 12.0f;
+        public float AirSpeed = 15.0f;
 
         public float VelocityY = 0;
         public float JumpPower = -24f;

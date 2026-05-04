@@ -41,6 +41,8 @@ namespace LikhoStation.src.Core
             var dy = Player.Pos.Y + Player.Size.Height / 2 - (enemy.Pos.Y + enemy.Size.Height / 2);
             var dist = Math.Sqrt(dx * dx + dy * dy);
 
+            enemy.IsPlayerNear = dist < enemy.WarningRadius;
+
             if (dist < enemy.KillRadius && !Player.IsHoldingBreath)
                 LoadScene(CurrentLevel.Name);
         }

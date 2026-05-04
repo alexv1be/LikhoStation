@@ -16,6 +16,8 @@ namespace LikhoStation.src.Models
         public Size Size = new Size(150, 350);
         public float Speed = 3.5f;
         public float KillRadius = 250f;
+        public float WarningRadius = 450f;
+        public bool IsPlayerNear = false;
         public float PatrolStartX;
         public float PatrolEndX;
         public bool MovingRight = true;

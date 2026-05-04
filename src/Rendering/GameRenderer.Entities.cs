@@ -40,6 +40,9 @@ namespace LikhoStation.src.Rendering
 
             if (level.Name == "SubwayDescent" && subwayFg != null && !p.IsFocusMode && !engine.IsDevMode)
                 g.DrawImage(subwayFg, 0, 0, level.WorldWidth, 2700);
+
+            if (level.Name == "LadnyForest" && ladnyForestFg != null && !p.IsFocusMode && !engine.IsDevMode)
+                g.DrawImage(ladnyForestFg, 0, 0, level.WorldWidth, (int)g.VisibleClipBounds.Height);
         }
 
         /// <summary>
@@ -94,6 +97,7 @@ namespace LikhoStation.src.Rendering
         private void DrawEnemies(Graphics g, GameController engine)
         {
             if (engine.CurrentLevel.Enemies == null) return;
+
             foreach (var enemy in engine.CurrentLevel.Enemies)
             {
                 Image enemySprite = null;
@@ -102,10 +106,15 @@ namespace LikhoStation.src.Rendering
                 {
                     enemySprite = enemy.IsPlayerNear ? likhoReach : likhoWalk;
                 }
+                else if (engine.CurrentLevel.Name == "LifelessStreet")
+                {
+                    enemySprite = aukaWalk;
+                }
 
                 if (enemySprite != null)
                 {
                     var state = g.Save();
+
                     float drawHeight = enemy.Size.Height;
                     float drawWidth = ((float)enemySprite.Width / enemySprite.Height) * drawHeight;
 
@@ -125,7 +134,6 @@ namespace LikhoStation.src.Rendering
                     g.FillRectangle(enemyBrush, enemy.Pos.X, enemy.Pos.Y, enemy.Size.Width, enemy.Size.Height);
                 }
 
-                // Отрисовка красного круга смерти (если зажат Shift)
                 if (engine.Player.IsFocusMode)
                 {
                     DrawEnemyHearingRadius(g, enemy);

@@ -129,7 +129,7 @@ namespace LikhoStation.src.Core
             if (keys.Contains(Keys.C) && !Player.IsExhausted && !CurrentLevel.IsRealWorld)
             {
                 Player.IsHoldingBreath = true;
-                Player.Oxygen -= 0.6f;
+                Player.Oxygen -= 0.9f;
             }
             else
             {

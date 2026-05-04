@@ -79,12 +79,13 @@ namespace LikhoStation.src.Core
             {
                 if (CurrentLevel.Name == "Kitchen")
                 {
-                    if (CurrentLevel.IsBagPickedUp) LoadScene("Street");
+                    if (CurrentLevel.IsItemPickedUp) LoadScene("Street");
                     else Player.Pos.X = CurrentLevel.WorldWidth - Player.Size.Width;
                 }
                 else if (CurrentLevel.Name == "Street") LoadScene("SubwayDescent");
                 else if (CurrentLevel.Name == "SubwayDescent") StartMetroCutscene();
                 else if (CurrentLevel.Name == "AbandonedTrain") LoadScene("AbandonedStation");
+                else if (CurrentLevel.Name == "AbandonedStation") LoadScene("LifelessStreet");
                 else Player.Pos.X = CurrentLevel.WorldWidth - Player.Size.Width;
             }
 

@@ -25,9 +25,9 @@ namespace LikhoStation.src.Models
         public List<RectangleF> Platforms = new List<RectangleF>();
         public List<RectangleF> Triggers = new List<RectangleF>();
 
-        public RectangleF ItemBag;
-        public bool IsBagPickedUp = false;
-        public bool IsNearBag = false;
+        public RectangleF ActiveItemRect;
+        public bool IsItemPickedUp = false;
+        public bool IsNearItem = false;
 
         public RectangleF ForegroundObject;
         public bool HasForegroundObject = false;

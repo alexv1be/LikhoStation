@@ -21,17 +21,38 @@ namespace LikhoStation.src.Core
             }
         }
 
+        // Генератор случайных чисел для непредсказуемости
+        private static Random rnd = new Random();
+
         private void PatrolEnemy(Enemy enemy)
         {
+            if (enemy.IsUnpredictable)
+            {
+                enemy.BehaviorTimer--;
+                if (enemy.BehaviorTimer <= 0)
+                {
+                    enemy.MovingRight = rnd.Next(2) == 0;
+                    enemy.BehaviorTimer = rnd.Next(50, 150);
+                }
+            }
+
             if (enemy.MovingRight)
             {
                 enemy.Pos.X += enemy.Speed;
-                if (enemy.Pos.X >= enemy.PatrolEndX) enemy.MovingRight = false;
+                if (enemy.Pos.X >= enemy.PatrolEndX)
+                {
+                    enemy.MovingRight = false;
+                    if (enemy.IsUnpredictable) enemy.BehaviorTimer = rnd.Next(50, 150);
+                }
             }
             else
             {
                 enemy.Pos.X -= enemy.Speed;
-                if (enemy.Pos.X <= enemy.PatrolStartX) enemy.MovingRight = true;
+                if (enemy.Pos.X <= enemy.PatrolStartX)
+                {
+                    enemy.MovingRight = true;
+                    if (enemy.IsUnpredictable) enemy.BehaviorTimer = rnd.Next(50, 150);
+                }
             }
         }
 

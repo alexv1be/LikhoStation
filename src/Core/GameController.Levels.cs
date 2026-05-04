@@ -37,6 +37,8 @@ namespace LikhoStation.src.Core
             else if (sceneName == "SubwayDescent") LoadSubwayDescent();
             else if (sceneName == "AbandonedTrain") LoadAbandonedTrain();
             else if (sceneName == "AbandonedStation") LoadAbandonedStation();
+            else if (sceneName == "LifelessStreet") LoadLifelessStreet();
+            else if (sceneName == "LadnyForest") LoadLadnyForest();
         }
 
         /// <summary>
@@ -57,7 +59,7 @@ namespace LikhoStation.src.Core
             CurrentLevel.Platforms.Clear();
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, CurrentLevel.WorldWidth, screenHeight - CurrentLevel.GroundY));
 
-            CurrentLevel.ItemBag = new RectangleF(630, CurrentLevel.GroundY - 407, 200, 200);
+            CurrentLevel.ActiveItemRect = new RectangleF(630, CurrentLevel.GroundY - 407, 200, 200);
         }
 
         /// <summary>
@@ -101,6 +103,8 @@ namespace LikhoStation.src.Core
 
             if (CurrentLevel.Name == "AbandonedTrain" && Player.Pos.X >= 1400)
                 LoadScene("AbandonedStation");
+            if (CurrentLevel.Name == "LifelessStreet" && Player.Pos.X >= (CurrentLevel.WorldWidth - 550))
+                LoadScene("LadnyForest");
         }
 
         /// <summary>
@@ -196,10 +200,8 @@ namespace LikhoStation.src.Core
         {
             State = GameState.Playing;
 
-            // Рассчитываем правильную ширину уровня под сгенерированный арт (21:9)
-            int correctWidth = (int)(screenHeight * (21f / 9f));
+            var correctWidth = (int)(screenHeight * (21f / 9f));
 
-            // Устанавливаем нашу идеальную ширину
             CurrentLevel = new Level { Name = "AbandonedStation", IsRealWorld = false, HasKhmar = true, WorldWidth = correctWidth };
 
             CurrentLevel.IsStaticCamera = false;
@@ -223,6 +225,71 @@ namespace LikhoStation.src.Core
             likho.PatrolStartX = 1500f;
             likho.PatrolEndX = correctWidth - 300f;
             CurrentLevel.Enemies.Add(likho);
+        }
+
+        /// <summary>
+        /// Генерирует локацию "Безжизненная улица".
+        /// </summary>
+        private void LoadLifelessStreet()
+        {
+            State = GameState.Playing;
+
+            var correctWidth = (int)(screenHeight * (30f / 9f));
+
+            CurrentLevel = new Level { Name = "LifelessStreet", IsRealWorld = false, HasKhmar = true, WorldWidth = correctWidth };
+            CurrentLevel.IsStaticCamera = false;
+
+            Player.Size = new Size(180, 400);
+
+            CurrentLevel.GroundY = screenHeight * 0.95f;
+            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
+
+            CurrentLevel.Platforms.Clear();
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, correctWidth, 500));
+
+            var auka = new Enemy();
+            auka.Size = new Size(150, 260);
+            auka.Pos = new PointF(1500, CurrentLevel.GroundY - auka.Size.Height);
+
+            auka.Speed = 20.0f;
+            auka.KillRadius = 250f;
+            auka.WarningRadius = 500f;
+            auka.IsUnpredictable = true;
+            auka.PatrolStartX = 1000f;
+            auka.PatrolEndX = correctWidth - 100f;
+
+            CurrentLevel.Enemies.Add(auka);
+        }
+
+        /// <summary>
+        /// Генерирует локацию "Ладный лес".
+        /// </summary>
+        private void LoadLadnyForest()
+        {
+            State = GameState.Playing;
+
+            var correctWidth = (int)(screenHeight * (30f / 9f));
+
+            CurrentLevel = new Level { Name = "LadnyForest", IsRealWorld = false, HasKhmar = true, WorldWidth = correctWidth };
+            CurrentLevel.IsStaticCamera = false;
+
+            Player.Speed = 18.0f;
+            Player.AirSpeed = 22.0f;
+
+            Player.Size = new Size(180, 400);
+
+            CurrentLevel.GroundY = screenHeight * 0.85f;
+            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
+
+            CurrentLevel.Platforms.Clear();
+
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 1050, 500));
+            CurrentLevel.Platforms.Add(new RectangleF(1500, CurrentLevel.GroundY, 1250, 500));
+            CurrentLevel.Platforms.Add(new RectangleF(3150, CurrentLevel.GroundY, correctWidth - 3150, 500));
+
+            // Предмет на пне (доделать)
+            CurrentLevel.ActiveItemRect = new RectangleF(2100, CurrentLevel.GroundY - 120, 80, 80);
+            CurrentLevel.IsItemPickedUp = false;
         }
     }
 }

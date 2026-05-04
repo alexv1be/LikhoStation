@@ -35,6 +35,8 @@ namespace LikhoStation.src.Rendering
             else if (level.Name == "SubwayDescent") DrawOutlineText(g, "СПУСК В МЕТРО", uiFont, locColor, 40, 40);
             else if (level.Name == "AbandonedTrain") DrawOutlineText(g, "ЗАБРОШЕННЫЙ ПОЕЗД", uiFont, locColor, 40, 40);
             else if (level.Name == "AbandonedStation") DrawOutlineText(g, "ЗАБРОШЕННАЯ СТАНЦИЯ", uiFont, locColor, 40, 40);
+            else if (level.Name == "LifelessStreet") DrawOutlineText(g, "БЕЗЖИЗНЕННАЯ УЛИЦА", uiFont, locColor, 40, 40);
+            else if (level.Name == "LadnyForest") DrawOutlineText(g, "ЛАДНЫЙ ЛЕС", uiFont, locColor, 40, 40);
 
             if (!level.IsRealWorld) DrawOxygenUI(g, p);
 
@@ -186,10 +188,10 @@ namespace LikhoStation.src.Rendering
         {
             DrawOutlineText(g, "Кухня бабушки", new Font(pixelFont, 12), Brushes.White, 40, 40);
 
-            if (!level.IsBagPickedUp && level.IsNearBag)
+            if (!level.IsItemPickedUp && level.IsNearItem)
             {
-                var bagX = level.ItemBag.X - camX;
-                var bagY = level.ItemBag.Y - camY;
+                var bagX = level.ActiveItemRect.X - camX;
+                var bagY = level.ActiveItemRect.Y - camY;
                 DrawOutlineText(g, "Взять сумку (E)", new Font(pixelFont, 10), Brushes.White, (int)bagX - 40, (int)bagY - 30);
             }
         }

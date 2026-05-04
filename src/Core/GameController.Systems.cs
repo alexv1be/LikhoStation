@@ -16,7 +16,7 @@ namespace LikhoStation.src.Core
         /// </summary>
         private void SaveGame()
         {
-            var data = $"{CurrentLevel.Name}|{CurrentLevel.IsBagPickedUp}|{Player.Pos.X}|{Player.Pos.Y}";
+            var data = $"{CurrentLevel.Name}|{CurrentLevel.IsItemPickedUp}|{Player.Pos.X}|{Player.Pos.Y}";
             File.WriteAllText(saveFilePath, data);
             HasSaveFile = true;
         }
@@ -33,10 +33,10 @@ namespace LikhoStation.src.Core
                 if (data.Length >= 2)
                 {
                     var savedScene = data[0];
-                    var isBagPickedUp = bool.Parse(data[1]);
+                    var isItemPickedUp = bool.Parse(data[1]);
 
                     LoadScene(savedScene);
-                    CurrentLevel.IsBagPickedUp = isBagPickedUp;
+                    CurrentLevel.IsItemPickedUp = isItemPickedUp;
 
                     if (data.Length >= 4)
                     {
@@ -132,15 +132,15 @@ namespace LikhoStation.src.Core
         /// <param name="keys"></param>
         private void UpdateItems(HashSet<Keys> keys)
         {
-            if (CurrentLevel.Name == "Kitchen" && !CurrentLevel.IsBagPickedUp)
+            if (CurrentLevel.ActiveItemRect != RectangleF.Empty && !CurrentLevel.IsItemPickedUp)
             {
                 var centerX = Player.Pos.X + Player.Size.Width / 2;
-                if (Math.Abs(centerX - (CurrentLevel.ItemBag.X + CurrentLevel.ItemBag.Width / 2)) < 150)
+                if (Math.Abs(centerX - (CurrentLevel.ActiveItemRect.X + CurrentLevel.ActiveItemRect.Width / 2)) < 150)
                 {
-                    CurrentLevel.IsNearBag = true;
-                    if (keys.Contains(Keys.E)) CurrentLevel.IsBagPickedUp = true;
+                    CurrentLevel.IsNearItem = true;
+                    if (keys.Contains(Keys.E)) CurrentLevel.IsItemPickedUp = true;
                 }
-                else CurrentLevel.IsNearBag = false;
+                else CurrentLevel.IsNearItem = false;
             }
         }
     }

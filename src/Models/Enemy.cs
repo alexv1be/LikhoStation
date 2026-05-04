@@ -21,5 +21,7 @@ namespace LikhoStation.src.Models
         public float PatrolStartX;
         public float PatrolEndX;
         public bool MovingRight = true;
+        public bool IsUnpredictable = false;
+        public int BehaviorTimer = 0;
     }
 }

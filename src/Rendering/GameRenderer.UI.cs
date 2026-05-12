@@ -225,6 +225,11 @@ namespace LikhoStation.src.Rendering
                 fullImg = keysFullImg;
                 description = "Почему мои ключи оказались тут?..";
             }
+            else if (level.Name == "Garages")
+            {
+                fullImg = playerFullImg;
+                description = "Батарейки давно сели, но я всё равно его храню.";
+            }
 
             if (fullImg != null)
             {
@@ -248,6 +253,52 @@ namespace LikhoStation.src.Rendering
                     g.DrawString(description, descFont, transparentBrush, textX, textY);
                 }
             }
+        }
+
+        private void DrawEndingCutscene(Graphics g, GameController engine, int w, int h)
+        {
+            int t = engine.CurrentLevel.DialogTimer;
+
+            int fadeAlpha = (t <= 25) ? (int)((t / 25f) * 255) : 255;
+            g.FillRectangle(new SolidBrush(Color.FromArgb(Math.Clamp(fadeAlpha, 0, 255), 0, 0, 0)), 0, 0, w, h);
+
+            if (t <= 25) return;
+
+            if (t > 25 && t <= 75)
+            {
+                int a = (t <= 40) ? (int)(((t - 25) / 15f) * 255) : 255;
+                DrawEndingImage(g, ending1Img, w, h, Math.Clamp(a, 0, 255));
+            }
+
+            if (t > 75 && t <= 90)
+            {
+                int alpha1 = (int)(((90 - t) / 15f) * 255);
+                int alpha2 = (int)(((t - 75) / 15f) * 255);
+                DrawEndingImage(g, ending1Img, w, h, Math.Clamp(alpha1, 0, 255));
+                DrawEndingImage(g, ending2Img, w, h, Math.Clamp(alpha2, 0, 255));
+            }
+
+            if (t > 90)
+            {
+                int a = (t > 135) ? (int)(((150 - t) / 15f) * 255) : 255;
+                DrawEndingImage(g, ending2Img, w, h, Math.Clamp(a, 0, 255));
+            }
+        }
+
+        /// <summary>
+        /// Вспомогательный метод для отрисовки картинки без растягивания (с полями)
+        /// </summary>
+        private void DrawEndingImage(Graphics g, Image img, int w, int h, int alpha)
+        {
+            if (img == null || alpha <= 0) return;
+
+            float ratio = Math.Min((float)w / img.Width, (float)h / img.Height);
+            int drawW = (int)(img.Width * ratio);
+            int drawH = (int)(img.Height * ratio);
+            int posX = (w - drawW) / 2;
+            int posY = (h - drawH) / 2;
+
+            DrawImageWithAlpha(g, img, new Rectangle(posX, posY, drawW, drawH), alpha);
         }
     }
 }

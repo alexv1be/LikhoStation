@@ -71,6 +71,13 @@ namespace LikhoStation.src.Rendering
                 else
                     g.Clear(Color.FromArgb(10, 15, 10));
             }
+            else if (level.Name == "Garages")
+            {
+                if (garagesBg != null)
+                    g.DrawImage(garagesBg, -engine.CameraOffsetX, 0, level.WorldWidth, GameController.VirtualHeight);
+                else
+                    g.Clear(Color.FromArgb(15, 15, 20));
+            }
         }
 
         /// <summary>

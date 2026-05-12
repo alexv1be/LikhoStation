@@ -25,6 +25,9 @@ namespace LikhoStation.src.Rendering
         private Image lifelessStreetBg;
         private Image ladnyForestBg;
         private Image ladnyForestFg;
+        private Image garagesBg;
+        private Image playerImg;
+        private Image playerFullImg;
 
         private Image likhoWalk;
         private Image likhoReach;
@@ -34,6 +37,9 @@ namespace LikhoStation.src.Rendering
         private Image keysImg;
         private Image phoneFullImg;
         private Image keysFullImg;
+
+        private Image ending1Img;
+        private Image ending2Img;
 
         private Image yanaHoodieIdle;
         private List<Image> yanaHoodieWalk = new List<Image>();
@@ -63,6 +69,7 @@ namespace LikhoStation.src.Rendering
             if (File.Exists(@"Assets\Images\bg_lifeless_street.png")) lifelessStreetBg = Image.FromFile(@"Assets\Images\bg_lifeless_street.png");
             if (File.Exists(@"Assets\Images\bg_ladny_forest.png")) ladnyForestBg = Image.FromFile(@"Assets\Images\bg_ladny_forest.png");
             if (File.Exists(@"Assets\Images\fg_ladny_forest.png")) ladnyForestFg = Image.FromFile(@"Assets\Images\fg_ladny_forest.png");
+            if (File.Exists(@"Assets\Images\bg_garages.png")) garagesBg = Image.FromFile(@"Assets\Images\bg_garages.png");
 
             if (File.Exists(@"Assets\Images\likho_walk.png")) likhoWalk = Image.FromFile(@"Assets\Images\likho_walk.png");
             if (File.Exists(@"Assets\Images\likho_reach.png")) likhoReach = Image.FromFile(@"Assets\Images\likho_reach.png");
@@ -75,6 +82,8 @@ namespace LikhoStation.src.Rendering
                 keysImg = Image.FromFile(@"Assets\Images\item_keys.png");
                 keysFullImg = keysImg;
             }
+            if (File.Exists(@"Assets\Images\item_player.png")) playerImg = Image.FromFile(@"Assets\Images\item_player.png");
+            if (File.Exists(@"Assets\Images\item_player_full.png")) playerFullImg = Image.FromFile(@"Assets\Images\item_player_full.png");
 
             var p = @"Assets\Images\";
             if (File.Exists(p + "yana_hoodie_idle.png")) yanaHoodieIdle = Image.FromFile(p + "yana_hoodie_idle.png");
@@ -83,6 +92,10 @@ namespace LikhoStation.src.Rendering
             if (File.Exists(p + "yana_coat_idle.png")) yanaCoatIdle = Image.FromFile(p + "yana_coat_idle.png");
             if (File.Exists(p + "yana_coat_w1.png")) yanaCoatWalk.Add(Image.FromFile(p + "yana_coat_w1.png"));
             if (File.Exists(p + "yana_coat_w2.png")) yanaCoatWalk.Add(Image.FromFile(p + "yana_coat_w2.png"));
+
+            if (File.Exists(@"Assets\Images\ending1.png")) ending1Img = Image.FromFile(@"Assets\Images\ending1.png");
+            if (File.Exists(@"Assets\Images\ending2.png")) ending2Img = Image.FromFile(@"Assets\Images\ending2.png");
+
             if (File.Exists(@"Assets\Fonts\LCD40x2Display-Regular.otf"))
             {
                 customFonts.AddFontFile(@"Assets\Fonts\LCD40x2Display-Regular.otf");
@@ -150,6 +163,9 @@ namespace LikhoStation.src.Rendering
                 DrawPauseMenu(g, engine, vw, vh);
 
             DrawFullscreenItem(g, engine.CurrentLevel, vw, vh);
+
+            if (engine.State == GameState.EndingCutscene)
+                DrawEndingCutscene(g, engine, vw, vh);
         }
     }
 }

@@ -171,6 +171,7 @@ namespace LikhoStation.src.Rendering
             Image img = null;
             if (level.Name == "LifelessStreet") img = phoneImg;
             else if (level.Name == "LadnyForest") img = keysImg;
+            else if (level.Name == "Garages") img = playerImg;
 
             if (img != null) g.DrawImage(img, level.ActiveItemRect);
         }

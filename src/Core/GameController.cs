@@ -43,6 +43,17 @@ namespace LikhoStation.src.Core
         /// <param name="pressedKeys"></param>
         public void Update(HashSet<Keys> pressedKeys)
         {
+            if (State == GameState.EndingCutscene)
+            {
+                CurrentLevel.DialogTimer++;
+                if (CurrentLevel.DialogTimer > 150)
+                {
+                    State = GameState.MainMenu;
+                    MenuIndex = 0;
+                }
+                return;
+            }
+
             if (State != GameState.Playing) return;
 
             if (CurrentLevel != null && CurrentLevel.IsViewingItem)

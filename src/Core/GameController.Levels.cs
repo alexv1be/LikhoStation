@@ -39,7 +39,8 @@ namespace LikhoStation.src.Core
             else if (sceneName == "AbandonedTrain") LoadAbandonedTrain();
             else if (sceneName == "AbandonedStation") LoadAbandonedStation();
             else if (sceneName == "LifelessStreet") LoadLifelessStreet(fromRight);
-            else if (sceneName == "LadnyForest") LoadLadnyForest();
+            else if (sceneName == "LadnyForest") LoadLadnyForest(fromRight);
+            else if (sceneName == "Garages") LoadGarages();
         }
 
         /// <summary>
@@ -104,8 +105,12 @@ namespace LikhoStation.src.Core
 
             if (CurrentLevel.Name == "AbandonedTrain" && Player.Pos.X >= 1400)
                 LoadScene("AbandonedStation");
+
             if (CurrentLevel.Name == "LifelessStreet" && Player.Pos.X >= (CurrentLevel.WorldWidth - 550))
                 LoadScene("LadnyForest");
+
+            if (CurrentLevel.Name == "Garages")
+                if (Player.Pos.X >= 700) Player.JumpPower = -20.0f;
         }
 
         /// <summary>
@@ -260,7 +265,7 @@ namespace LikhoStation.src.Core
             auka.PatrolEndX = correctWidth - 100f;
             CurrentLevel.Enemies.Add(auka);
 
-            float itemX = correctWidth * 0.66f;
+            var itemX = correctWidth * 0.66f;
             CurrentLevel.ActiveItemRect = new RectangleF(itemX, CurrentLevel.GroundY - 40, 60, 40);
             CurrentLevel.IsItemPickedUp = false;
         }
@@ -268,7 +273,7 @@ namespace LikhoStation.src.Core
         /// <summary>
         /// Генерирует локацию "Ладный лес".
         /// </summary>
-        private void LoadLadnyForest()
+        private void LoadLadnyForest(bool fromRight = false)
         {
             State = GameState.Playing;
             var correctWidth = (int)(screenHeight * (30f / 9f));
@@ -280,7 +285,11 @@ namespace LikhoStation.src.Core
 
             Player.Size = new Size(180, 400);
             CurrentLevel.GroundY = screenHeight * 0.85f;
-            Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
+
+            if (fromRight)
+                Player.Pos = new PointF(correctWidth - Player.Size.Width - 100, CurrentLevel.GroundY - Player.Size.Height);
+            else
+                Player.Pos = new PointF(100, CurrentLevel.GroundY - Player.Size.Height);
 
             CurrentLevel.Platforms.Clear();
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 1050, 500));
@@ -290,5 +299,61 @@ namespace LikhoStation.src.Core
             CurrentLevel.ActiveItemRect = new RectangleF(2400, CurrentLevel.GroundY - 150, 40, 40);
             CurrentLevel.IsItemPickedUp = false;
         }
+
+        /// <summary>
+        /// Генерирует локацию "Гаражи".
+        /// </summary>
+        private void LoadGarages()
+        {
+            State = GameState.Playing;
+            var correctWidth = (int)(screenHeight * (30f / 9f));
+
+            CurrentLevel = new Level { Name = "Garages", IsRealWorld = false, HasKhmar = true, WorldWidth = correctWidth };
+            CurrentLevel.IsStaticCamera = false;
+
+            CurrentLevel.GroundY = screenHeight * 0.90f;
+
+            Player.Size = new Size(190, 380);
+            Player.Speed = 18.0f;
+            Player.JumpPower = -30.0f;
+
+            var spawnX = 300;
+            Player.Pos = new PointF(spawnX, CurrentLevel.GroundY - Player.Size.Height);
+
+            CurrentLevel.Platforms.Clear();
+
+            CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, correctWidth, 500));
+
+            var dumpsterX = correctWidth * 0.19f;
+            var dumpsterWidth = 380;
+            var dumpsterHeight = 270;
+            var dumpsterY = CurrentLevel.GroundY - dumpsterHeight;
+            CurrentLevel.Platforms.Add(new RectangleF(dumpsterX, dumpsterY, dumpsterWidth, dumpsterHeight));
+            if (Player.Pos.X > 500) Player.JumpPower = -15.0f;
+
+            var roofHeight = 405;
+            var roofY = CurrentLevel.GroundY - roofHeight;
+
+            var roof1StartX = dumpsterX + dumpsterWidth - 20;
+            var roof1Width = 1890;
+            CurrentLevel.Platforms.Add(new RectangleF(roof1StartX, roofY, roof1Width, roofHeight));
+
+            var gapWidth = 330;
+
+            var roof2StartX = roof1StartX + roof1Width + gapWidth;
+            var roof2Width = correctWidth - roof2StartX;
+            CurrentLevel.Platforms.Add(new RectangleF(roof2StartX, roofY, roof2Width, roofHeight));
+
+            var itemX = correctWidth * 0.88f;
+            CurrentLevel.ActiveItemRect = new RectangleF(itemX, roofY - 40, 60, 40);
+            CurrentLevel.IsItemPickedUp = false;
+        }
+
+        private void StartEndingCutscene()
+        {
+            State = GameState.EndingCutscene;
+            CurrentLevel.DialogTimer = 0;
+        }
     }
+
 }

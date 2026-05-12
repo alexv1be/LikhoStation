@@ -77,6 +77,8 @@ namespace LikhoStation.src.Core
             {
                 if (CurrentLevel.Name == "LadnyForest")
                     LoadScene("LifelessStreet", true);
+                else if (CurrentLevel.Name == "Garages")
+                    LoadScene("LadnyForest", true);
                 else
                     Player.Pos.X = 0;
             }
@@ -93,6 +95,9 @@ namespace LikhoStation.src.Core
                 else if (CurrentLevel.Name == "AbandonedTrain") LoadScene("AbandonedStation");
                 else if (CurrentLevel.Name == "AbandonedStation") LoadScene("LifelessStreet");
                 else if (CurrentLevel.Name == "LifelessStreet") LoadScene("LadnyForest");
+                else if (CurrentLevel.Name == "LifelessStreet") LoadScene("LadnyForest");
+                else if (CurrentLevel.Name == "LadnyForest") LoadScene("Garages");
+                else if (CurrentLevel.Name == "Garages") StartEndingCutscene();
                 else Player.Pos.X = CurrentLevel.WorldWidth - Player.Size.Width;
             }
 

@@ -15,6 +15,7 @@ namespace LikhoStation.src.Models
         MainMenu,
         Playing,
         Paused,
-        VideoPlaying
+        VideoPlaying,
+        EndingCutscene
     }
 }

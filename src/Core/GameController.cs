@@ -49,7 +49,6 @@ namespace LikhoStation.src.Core
         {
             if (State != GameState.Playing) return;
 
-            // Сначала проверяем, смотрим ли мы на предмет
             if (CurrentLevel != null && CurrentLevel.IsViewingItem)
             {
                 UpdateItems(pressedKeys); 

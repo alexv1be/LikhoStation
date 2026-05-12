@@ -30,6 +30,11 @@ namespace LikhoStation.src.Rendering
         private Image likhoReach;
         private Image aukaWalk;
 
+        private Image phoneImg;
+        private Image keysImg;
+        private Image phoneFullImg;
+        private Image keysFullImg;
+
         private Image yanaHoodieIdle;
         private List<Image> yanaHoodieWalk = new List<Image>();
 
@@ -62,6 +67,14 @@ namespace LikhoStation.src.Rendering
             if (File.Exists(@"Assets\Images\likho_walk.png")) likhoWalk = Image.FromFile(@"Assets\Images\likho_walk.png");
             if (File.Exists(@"Assets\Images\likho_reach.png")) likhoReach = Image.FromFile(@"Assets\Images\likho_reach.png");
             if (File.Exists(@"Assets\Images\auka_walk.png")) aukaWalk = Image.FromFile(@"Assets\Images\auka_walk.png");
+
+            if (File.Exists(@"Assets\Images\item_phone.png")) phoneImg = Image.FromFile(@"Assets\Images\item_phone.png");
+            if (File.Exists(@"Assets\Images\item_phone_full.png")) phoneFullImg = Image.FromFile(@"Assets\Images\item_phone_full.png");
+            if (File.Exists(@"Assets\Images\item_keys.png"))
+            {
+                keysImg = Image.FromFile(@"Assets\Images\item_keys.png");
+                keysFullImg = keysImg;
+            }
 
             var p = @"Assets\Images\";
             if (File.Exists(p + "yana_hoodie_idle.png")) yanaHoodieIdle = Image.FromFile(p + "yana_hoodie_idle.png");
@@ -104,6 +117,7 @@ namespace LikhoStation.src.Rendering
             DrawEnemies(g, engine);
 
             DrawPlayerAndForeground(g, engine);
+            DrawItemsOnGround(g, engine);
             g.ResetTransform();
 
             if (engine.CurrentLevel.HasKhmar)
@@ -113,6 +127,8 @@ namespace LikhoStation.src.Rendering
 
             if (engine.State == GameState.Paused) 
                 DrawPauseMenu(g, engine, screenWidth, screenHeight);
+
+            DrawFullscreenItem(g, engine.CurrentLevel, screenWidth, screenHeight);
         }
     }
 }

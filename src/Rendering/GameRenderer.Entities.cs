@@ -159,5 +159,20 @@ namespace LikhoStation.src.Rendering
                 g.DrawEllipse(p, x, y, diameter, diameter);
             }
         }
+
+        /// <summary>
+        /// Отрисовка предметов на земле
+        /// </summary>
+        private void DrawItemsOnGround(Graphics g, GameController engine)
+        {
+            var level = engine.CurrentLevel;
+            if (level.IsItemPickedUp || level.ActiveItemRect == RectangleF.Empty) return;
+
+            Image img = null;
+            if (level.Name == "LifelessStreet") img = phoneImg;
+            else if (level.Name == "LadnyForest") img = keysImg;
+
+            if (img != null) g.DrawImage(img, level.ActiveItemRect);
+        }
     }
 }

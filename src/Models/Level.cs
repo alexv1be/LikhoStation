@@ -21,6 +21,7 @@ namespace LikhoStation.src.Models
         public bool FollowY = false;
         public float MaxCameraOffsetY = 0f;
         public bool IsRealWorld = true;
+        public bool IsViewingItem = false;
 
         public List<RectangleF> Platforms = new List<RectangleF>();
         public List<RectangleF> Triggers = new List<RectangleF>();

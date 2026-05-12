@@ -97,10 +97,6 @@ namespace LikhoStation.src.Rendering
                 {
                     g.DrawRectangle(new Pen(Color.FromArgb(50, 255, 255, 255), 2), plat.X, plat.Y, plat.Width, plat.Height);
                 }
-                else if (level.Name != "Kitchen" && level.Name != "Street" && level.Name != "SubwayDescent" && level.Name != "AbandonedTrain" && level.Name != "AbandonedStation" && level.Name != "LifelessStreet" && level.Name != "LadnyForest") // поменять!
-                {
-                    g.FillRectangle(Brushes.Gray, plat);
-                }
             }
 
             if (level.Name == "Kitchen" && !level.IsItemPickedUp)

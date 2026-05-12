@@ -46,6 +46,14 @@ namespace LikhoStation.src.Rendering
             if (engine.IsDevMode)
                 DrawOutlineText(g, "РЕЖИМ РАЗРАБОТЧИКА (CTRL)", new Font(pixelFont, 8), Brushes.Orange, 40, 85);
 
+            if (!level.IsItemPickedUp && level.IsNearItem && !level.IsViewingItem)
+            {
+                var itemX = level.ActiveItemRect.X - camX + level.ActiveItemRect.Width / 2;
+                var itemY = level.ActiveItemRect.Y - camY - 20;
+
+                DrawOutlineText(g, "Поднять предмет (E)", new Font(pixelFont, 10), Brushes.White, (int)itemX - 80, (int)itemY);
+            }
+
             DrawDialogUI(g, level, p, screenWidth, screenHeight);
         }
 
@@ -193,6 +201,53 @@ namespace LikhoStation.src.Rendering
                 var bagX = level.ActiveItemRect.X - camX;
                 var bagY = level.ActiveItemRect.Y - camY;
                 DrawOutlineText(g, "Взять сумку (E)", new Font(pixelFont, 10), Brushes.White, (int)bagX - 40, (int)bagY - 30);
+            }
+        }
+
+        /// <summary>
+        /// Метод для полноэкранного затемнения.
+        /// </summary>
+        private void DrawFullscreenItem(Graphics g, Level level, int w, int h)
+        {
+            if (level == null || !level.IsViewingItem) return;
+
+            g.FillRectangle(new SolidBrush(Color.FromArgb(220, 0, 0, 0)), 0, 0, w, h);
+
+            Image fullImg = null;
+            string description = "";
+
+            if (level.Name == "LifelessStreet")
+            {
+                fullImg = phoneFullImg;
+                description = "Если б я знала, где...";
+            }
+            else if (level.Name == "LadnyForest")
+            {
+                fullImg = keysFullImg;
+                description = "Почему мои ключи оказались тут?..";
+            }
+
+            if (fullImg != null)
+            {
+                float scale = (h * 0.6f) / fullImg.Height;
+                int drawW = (int)(fullImg.Width * scale);
+                int drawH = (int)(fullImg.Height * scale);
+                int x = (w - drawW) / 2;
+                int y = (h - drawH) / 2;
+
+                g.DrawImage(fullImg, x, y, drawW, drawH);
+
+                if (!string.IsNullOrEmpty(description))
+                {
+                    var descFont = new Font(pixelFont, 10);
+
+                    int textX = (w - (int)g.MeasureString(description, descFont).Width) / 2;
+                    int textY = y + drawH + 50;
+
+                    var transparentBrush = new SolidBrush(Color.FromArgb(128, 255, 255, 255));
+
+                    g.DrawString(description, descFont, transparentBrush, textX, textY);
+                }
             }
         }
     }

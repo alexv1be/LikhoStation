@@ -73,7 +73,13 @@ namespace LikhoStation.src.Core
         /// </summary>
         private void CheckBoundaries()
         {
-            if (Player.Pos.X < 0) Player.Pos.X = 0;
+            if (Player.Pos.X < 0)
+            {
+                if (CurrentLevel.Name == "LadnyForest")
+                    LoadScene("LifelessStreet", true);
+                else
+                    Player.Pos.X = 0;
+            }
 
             if (Player.Pos.X > CurrentLevel.WorldWidth - Player.Size.Width)
             {
@@ -86,6 +92,7 @@ namespace LikhoStation.src.Core
                 else if (CurrentLevel.Name == "SubwayDescent") StartMetroCutscene();
                 else if (CurrentLevel.Name == "AbandonedTrain") LoadScene("AbandonedStation");
                 else if (CurrentLevel.Name == "AbandonedStation") LoadScene("LifelessStreet");
+                else if (CurrentLevel.Name == "LifelessStreet") LoadScene("LadnyForest");
                 else Player.Pos.X = CurrentLevel.WorldWidth - Player.Size.Width;
             }
 

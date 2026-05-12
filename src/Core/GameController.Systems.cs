@@ -132,15 +132,33 @@ namespace LikhoStation.src.Core
         /// <param name="keys"></param>
         private void UpdateItems(HashSet<Keys> keys)
         {
+            if (CurrentLevel.IsViewingItem)
+            {
+                if (keys.Contains(Keys.E) || keys.Contains(Keys.Enter) || keys.Contains(Keys.Space))
+                {
+                    CurrentLevel.IsViewingItem = false;
+                    keys.Remove(Keys.E);
+                    keys.Remove(Keys.Space);
+                }
+                return;
+            }
+
             if (CurrentLevel.ActiveItemRect != RectangleF.Empty && !CurrentLevel.IsItemPickedUp)
             {
-                var centerX = Player.Pos.X + Player.Size.Width / 2;
-                if (Math.Abs(centerX - (CurrentLevel.ActiveItemRect.X + CurrentLevel.ActiveItemRect.Width / 2)) < 150)
+                var cX = Player.Pos.X + Player.Size.Width / 2;
+                var iX = CurrentLevel.ActiveItemRect.X + CurrentLevel.ActiveItemRect.Width / 2;
+
+                CurrentLevel.IsNearItem = Math.Abs(cX - iX) < 150;
+
+                if (CurrentLevel.IsNearItem && keys.Contains(Keys.E))
                 {
-                    CurrentLevel.IsNearItem = true;
-                    if (keys.Contains(Keys.E)) CurrentLevel.IsItemPickedUp = true;
+                    CurrentLevel.IsItemPickedUp = true;
+                    if (CurrentLevel.Name != "Kitchen")
+                    {
+                        CurrentLevel.IsViewingItem = true;
+                    }
+                    keys.Remove(Keys.E);
                 }
-                else CurrentLevel.IsNearItem = false;
             }
         }
     }

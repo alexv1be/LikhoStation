@@ -286,7 +286,7 @@ namespace LikhoStation.src.Core
             CurrentLevel.Platforms.Add(new RectangleF(0, CurrentLevel.GroundY, 1050, 500));
             CurrentLevel.Platforms.Add(new RectangleF(1500, CurrentLevel.GroundY, 1250, 500));
             CurrentLevel.Platforms.Add(new RectangleF(3150, CurrentLevel.GroundY, correctWidth - 3150, 500));
-                        
+
             CurrentLevel.ActiveItemRect = new RectangleF(2400, CurrentLevel.GroundY - 150, 40, 40);
             CurrentLevel.IsItemPickedUp = false;
         }

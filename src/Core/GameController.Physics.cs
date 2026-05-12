@@ -8,7 +8,7 @@ namespace LikhoStation.src.Core
 {
     public partial class GameController
     {
-        //ФИЗИКА
+        // ФИЗИКА
 
         /// <summary>
         /// Обрабатывает движение игрока по оси X и проверяет столкновения с платформами по горизонтали.

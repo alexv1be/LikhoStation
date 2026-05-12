@@ -98,19 +98,40 @@ namespace LikhoStation.src.Rendering
         /// <param name="engine"></param>
         /// <param name="screenWidth"></param>
         /// <param name="screenHeight"></param>
-        public void Draw(Graphics g, GameController engine, int screenWidth, int screenHeight)
+        public void Draw(Graphics g, GameController engine, int physicalWidth, int physicalHeight)
         {
-            if (engine.State == GameState.MainMenu) 
+            int vw = GameController.VirtualWidth;
+            int vh = GameController.VirtualHeight;
+
+            float scaleX = (float)physicalWidth / vw;
+            float scaleY = (float)physicalHeight / vh;
+            float scale = Math.Min(scaleX, scaleY);
+
+            float scaledW = vw * scale;
+            float scaledH = vh * scale;
+            float offsetX = (physicalWidth - scaledW) / 2f;
+            float offsetY = (physicalHeight - scaledH) / 2f;
+
+            if (offsetX > 0 || offsetY > 0)
             {
-                DrawMainMenu(g, engine, screenWidth, screenHeight);
+                g.Clear(Color.Black);
+            }
+
+            g.TranslateTransform(offsetX, offsetY);
+            g.ScaleTransform(scale, scale);
+
+            if (engine.State == GameState.MainMenu)
+            {
+                DrawMainMenu(g, engine, vw, vh);
                 return;
             }
 
             blinkCounter++;
             g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
 
-            DrawBackground(g, engine, screenWidth, screenHeight);
+            DrawBackground(g, engine, vw, vh);
 
+            var state = g.Save();
             g.TranslateTransform(-engine.CameraOffsetX, -engine.CameraOffsetY);
             DrawGeometry(g, engine);
 
@@ -118,17 +139,17 @@ namespace LikhoStation.src.Rendering
 
             DrawPlayerAndForeground(g, engine);
             DrawItemsOnGround(g, engine);
-            g.ResetTransform();
+            g.Restore(state);
 
             if (engine.CurrentLevel.HasKhmar)
-                DrawKhmar(g, engine.CurrentLevel, engine.Player, engine.CameraOffsetX, engine.CameraOffsetY, screenWidth, screenHeight);
+                DrawKhmar(g, engine.CurrentLevel, engine.Player, engine.CameraOffsetX, engine.CameraOffsetY, vw, vh);
 
             DrawUI(g, engine);
 
-            if (engine.State == GameState.Paused) 
-                DrawPauseMenu(g, engine, screenWidth, screenHeight);
+            if (engine.State == GameState.Paused)
+                DrawPauseMenu(g, engine, vw, vh);
 
-            DrawFullscreenItem(g, engine.CurrentLevel, screenWidth, screenHeight);
+            DrawFullscreenItem(g, engine.CurrentLevel, vw, vh);
         }
     }
 }

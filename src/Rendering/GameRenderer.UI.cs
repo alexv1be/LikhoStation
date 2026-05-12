@@ -26,8 +26,8 @@ namespace LikhoStation.src.Rendering
             var camY = engine.CameraOffsetY;
 
             var uiFont = new Font(pixelFont, 12);
-            var screenWidth = (int)g.VisibleClipBounds.Width;
-            var screenHeight = (int)g.VisibleClipBounds.Height;
+            var screenWidth = GameController.VirtualWidth;
+            var screenHeight = GameController.VirtualHeight;
             var locColor = Brushes.White;
 
             if (level.Name == "Kitchen") DrawKitchenUI(g, level, camX, camY);
@@ -118,8 +118,7 @@ namespace LikhoStation.src.Rendering
             var textBrush = p.IsExhausted ? Brushes.Red : Brushes.White;
             var text = p.IsExhausted ? "ОДЫШКА!" : "ДЫХАНИЕ (Удерживай C)";
 
-            var screenWidth = (int)g.VisibleClipBounds.Width;
-            var xPos = screenWidth - 450;
+            var xPos = GameController.VirtualWidth - 450;
             var barOffset = 200;
 
             DrawOutlineText(g, text, new Font(pixelFont, 8), textBrush, xPos, 80);

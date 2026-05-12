@@ -42,7 +42,7 @@ namespace LikhoStation.src.Rendering
                 g.DrawImage(subwayFg, 0, 0, level.WorldWidth, 2700);
 
             if (level.Name == "LadnyForest" && ladnyForestFg != null && !p.IsFocusMode && !engine.IsDevMode)
-                g.DrawImage(ladnyForestFg, 0, 0, level.WorldWidth, (int)g.VisibleClipBounds.Height);
+                g.DrawImage(ladnyForestFg, 0, 0, level.WorldWidth, GameController.VirtualHeight);
         }
 
         /// <summary>

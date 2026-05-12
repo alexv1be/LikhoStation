@@ -28,7 +28,7 @@ namespace LikhoStation
             videoPlayer.Dock = DockStyle.Fill;
             videoPlayer.Visible = false;
             ((System.ComponentModel.ISupportInitialize)(this.videoPlayer)).EndInit();
-           
+
             this.DoubleBuffered = true;
             this.WindowState = FormWindowState.Maximized;
             this.Text = "Станция Лихо";
@@ -40,7 +40,7 @@ namespace LikhoStation
         {
             Cursor.Hide();
 
-            engine = new GameController(this.ClientSize.Width, this.ClientSize.Height);
+            engine = new GameController();
             renderer = new GameRenderer();
 
             skipLabel = new Label();
@@ -119,7 +119,6 @@ namespace LikhoStation
 
         private void VideoPlayer_PlayStateChange(object sender, AxWMPLib._WMPOCXEvents_PlayStateChangeEvent e)
         {
-            // 8 — это код состояния "MediaEnded" (Видео закончилось)
             if (e.newState == 8)
             {
                 videoPlayer.Visible = false;

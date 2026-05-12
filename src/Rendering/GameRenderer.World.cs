@@ -130,7 +130,6 @@ namespace LikhoStation.src.Rendering
         /// <param name="camY"></param>
         /// <param name="width"></param>
         /// <param name="height"></param>
-        // Обрати внимание: в скобках появился Level level
         private void DrawKhmar(Graphics g, Level level, Player p, float camX, float camY, int width, int height)
         {
             var baseSize = p.Size.Height > 500 ? 900 : 550;

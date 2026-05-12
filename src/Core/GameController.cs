@@ -9,6 +9,9 @@ namespace LikhoStation.src.Core
 {
     public partial class GameController
     {
+        public const int VirtualWidth = 1920;
+        public const int VirtualHeight = 1200;
+
         public Player Player { get; private set; }
         public Level CurrentLevel { get; private set; }
         public float CameraOffsetX { get; private set; }
@@ -23,20 +26,13 @@ namespace LikhoStation.src.Core
         public bool ShouldExit { get; private set; } = false;
         public bool IsDevMode { get; private set; } = false;
 
-        private int screenWidth;
-        private int screenHeight;
+        private int screenWidth = VirtualWidth;
+        private int screenHeight = VirtualHeight;
         private float gravity = 1.2f;
         private string saveFilePath = "save.txt";
 
-        /// <summary>
-        /// Конструктор: Инициализирует базовые параметры контроллера, создает игрока и проверяет наличие файла сохранения.
-        /// </summary>
-        /// <param name="width"></param>
-        /// <param name="height"></param>
-        public GameController(int width, int height)
+        public GameController()
         {
-            screenWidth = width;
-            screenHeight = height;
             Player = new Player();
             HasSaveFile = File.Exists(saveFilePath);
         }
@@ -51,8 +47,8 @@ namespace LikhoStation.src.Core
 
             if (CurrentLevel != null && CurrentLevel.IsViewingItem)
             {
-                UpdateItems(pressedKeys); 
-                return; 
+                UpdateItems(pressedKeys);
+                return;
             }
 
             UpdateDialog();

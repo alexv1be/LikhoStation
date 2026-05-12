@@ -1,50 +1,65 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using LikhoStation.src.Core;
 using System.Collections.Generic;
 using System.Windows.Forms;
-using LikhoStation.src.Core;
-using LikhoStation.src.Models;
 
-namespace LikhoStation.Tests.CoreTests
+namespace LikhoStation.Tests
 {
     [TestClass]
     public class PhysicsTests
     {
         [TestMethod]
-        public void Update_PressRight_ShouldMovePlayerAndFaceRight()
+        public void MoveRight_UpdatesPlayerPosition()
         {
-            // Arrange
-            var engine = new GameController(1920, 1080);
-            engine.LoadScene("AbandonedTrain"); // Грузим уровень без стен в начале
+            var controller = new GameController();
+            controller.OnSingleKeyPress(Keys.Enter);
+            controller.LoadScene("Street");
+            var initialX = controller.Player.Pos.X;
+            var keys = new HashSet<Keys> { Keys.D };
 
-            var initialX = engine.Player.Pos.X;
-            var keys = new HashSet<Keys> { Keys.D }; // Жмем 'D'
+            controller.Update(keys);
 
-            // Act
-            engine.Update(keys);
-
-            // Assert
-            Assert.IsTrue(engine.Player.Pos.X > initialX, "Позиция X должна увеличиться при движении вправо");
-            Assert.IsTrue(engine.Player.FacingRight, "Флаг FacingRight должен стать true");
-            Assert.IsTrue(engine.Player.IsMoving, "Флаг IsMoving должен быть включен");
+            Assert.IsTrue(controller.Player.Pos.X > initialX);
+            Assert.IsTrue(controller.Player.FacingRight);
+            Assert.IsTrue(controller.Player.IsMoving);
         }
 
         [TestMethod]
-        public void Update_PressSpace_ShouldMakePlayerJump()
+        public void MoveLeft_UpdatesPlayerPosition()
         {
             // Arrange
-            var engine = new GameController(1920, 1080);
-            engine.OnSingleKeyPress(Keys.Enter);
-            engine.LoadScene("Street"); // На улице прыгать можно
+            var controller = new GameController();
+            // Используем лес, там точно широкое открытое пространство без стен на старте
+            controller.LoadScene("LadnyForest");
 
-            engine.Player.IsGrounded = true; // Искусственно ставим на землю
-            var keys = new HashSet<Keys> { Keys.Space };
+            // Ставим Яну далеко от левого края (X = 1000) и четко на землю
+            controller.Player.Pos = new System.Drawing.PointF(1000, controller.CurrentLevel.GroundY - controller.Player.Size.Height);
+            controller.Player.IsGrounded = true;
+
+            var initialX = controller.Player.Pos.X;
+            var keys = new HashSet<Keys> { Keys.A };
 
             // Act
-            engine.Update(keys);
+            controller.Update(keys);
 
             // Assert
-            Assert.IsFalse(engine.Player.IsGrounded, "Игрок должен оторваться от земли");
-            Assert.AreEqual(engine.Player.JumpPower + 1.2f, engine.Player.VelocityY, "Скорость по Y должна стать равна силе прыжка с учетом одного кадра гравитации");
+            Assert.IsTrue(controller.Player.Pos.X < initialX, "Координата X должна была уменьшиться при движении влево");
+            Assert.IsFalse(controller.Player.FacingRight, "Яна должна была повернуться влево");
+        }
+
+        [TestMethod]
+        public void Jump_WhenGrounded_SetsVelocityY()
+        {
+            var controller = new GameController();
+            controller.OnSingleKeyPress(Keys.Enter);
+            controller.LoadScene("Street");
+            controller.Player.IsGrounded = true;
+            var keys = new HashSet<Keys> { Keys.Space };
+
+            controller.Update(keys);
+
+            Assert.AreEqual(controller.Player.JumpPower + 1.2f, controller.Player.VelocityY);
+            Assert.IsFalse(controller.Player.IsGrounded);
         }
     }
 }

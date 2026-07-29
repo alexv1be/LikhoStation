@@ -30,7 +30,7 @@ namespace LikhoStation.src.Rendering
             var screenHeight = GameController.VirtualHeight;
             var locColor = Brushes.White;
 
-            if (level.Name == "Kitchen") DrawKitchenUI(g, level, camX, camY);
+            if (level.Name == "Kitchen") DrawOutlineText(g, "КУХНЯ БАБУШКИ", uiFont, locColor, 40, 40);
             else if (level.Name == "Street") DrawOutlineText(g, "УЛИЦА", uiFont, locColor, 40, 40);
             else if (level.Name == "SubwayDescent") DrawOutlineText(g, "СПУСК В МЕТРО", uiFont, locColor, 40, 40);
             else if (level.Name == "AbandonedTrain") DrawOutlineText(g, "ЗАБРОШЕННЫЙ ПОЕЗД", uiFont, locColor, 40, 40);
@@ -183,18 +183,6 @@ namespace LikhoStation.src.Rendering
             }
 
             return new Rectangle(posX, posY, drawW, drawH);
-        }
-
-        /// <summary>
-        /// Специфические подсказки для кухни (например, «Взять сумку»).
-        /// </summary>
-        /// <param name="g"></param>
-        /// <param name="level"></param>
-        /// <param name="camX"></param>
-        /// <param name="camY"></param>
-        private void DrawKitchenUI(Graphics g, Level level, float camX, float camY)
-        {
-            DrawOutlineText(g, "Кухня бабушки", new Font(pixelFont, 12), Brushes.White, 40, 40);
         }
 
         /// <summary>
